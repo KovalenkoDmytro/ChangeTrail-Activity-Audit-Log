@@ -1,10 +1,10 @@
-=== DK User Activity Logger ===
+=== Kovalenko Admin Change Audit ===
 Contributors: dmytrokovalenko
 Tags: activity log, audit log, security, logging, monitoring
 Requires at least: 6.2
 Tested up to: 7.0
 Requires PHP: 8.1
-Stable tag: 2.6.2
+Stable tag: 2.6.3
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -12,7 +12,7 @@ Records important WordPress activity and provides an owner-only log viewer for m
 
 == Description ==
 
-DK User Activity Logger helps site owners keep an audit trail of important administrative activity in a dedicated owner-only log viewer.
+Kovalenko Admin Change Audit helps site owners keep an audit trail of important administrative activity in a dedicated owner-only log viewer.
 
 Features include:
 
@@ -30,7 +30,7 @@ The plugin does not require an external account or third-party service to functi
 == Installation ==
 
 1. Upload the plugin folder to `/wp-content/plugins/`, or install it through the WordPress Plugins screen.
-2. Activate **DK User Activity Logger**.
+2. Activate **Kovalenko Admin Change Audit**.
 3. After activation, open **Tools > Activity Logs**.
 4. Optionally set an extra access password inside the log viewer.
 
@@ -63,6 +63,12 @@ Yes. The plugin defaults to `America/Edmonton`, but the owner can choose a diffe
 
 == Changelog ==
 
+= 2.6.3 =
+
+* Rename the public plugin to a more distinctive WordPress.org-ready brand and slug.
+* Replace the old wp_* technical prefix with a unique plugin-specific prefix across declarations, hooks, and stored keys.
+* Limit activation guidance notices to the plugin list and the dedicated log screen.
+
 = 2.6.2 =
 
 * Harden the activity log queries so every dynamic value uses a $wpdb->prepare() placeholder.
@@ -81,6 +87,10 @@ Yes. The plugin defaults to `America/Edmonton`, but the owner can choose a diffe
 * Preserve Edmonton-based timestamps and filtering behavior.
 
 == Upgrade Notice ==
+
+= 2.6.3 =
+
+This release renames the plugin for WordPress.org review and replaces the old technical prefixes with a unique plugin-specific prefix.
 
 = 2.6.2 =
 

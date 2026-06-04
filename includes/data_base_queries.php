@@ -6,7 +6,7 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-function wp_activity_logger_install(): void
+function kovalenko_admin_change_audit_install(): void
 {
     global $wpdb;
 
@@ -17,6 +17,7 @@ function wp_activity_logger_install(): void
         id BIGINT(20) UNSIGNED NOT NULL AUTO_INCREMENT,
         user_id BIGINT(20) UNSIGNED NOT NULL,
         activity TEXT NOT NULL,
+        details LONGTEXT NULL,
         ip_address VARCHAR(45) NOT NULL,
         created_at DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         PRIMARY KEY  (id),
@@ -28,7 +29,10 @@ function wp_activity_logger_install(): void
     dbDelta($sql);
 }
 
-function wp_activity_logger_record_activity(string $activity, ?int $user_id = null): void
+/**
+ * @param list<array{label: string, before: string, after: string}>|null $details
+ */
+function kovalenko_admin_change_audit_record_activity(string $activity, ?int $user_id = null, ?array $details = null): void
 {
     global $wpdb;
 
@@ -41,6 +45,7 @@ function wp_activity_logger_record_activity(string $activity, ?int $user_id = nu
     $ip_address = isset($_SERVER['REMOTE_ADDR'])
         ? sanitize_text_field(wp_unslash((string) $_SERVER['REMOTE_ADDR']))
         : 'Unknown';
+    $encoded_details = kovalenko_admin_change_audit_encode_activity_details($details);
 
     // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery -- Writing to the plugin's custom activity log table; WordPress has no higher-level API for it.
     $wpdb->insert(
@@ -48,6 +53,7 @@ function wp_activity_logger_record_activity(string $activity, ?int $user_id = nu
         [
             'user_id' => $resolved_user_id,
             'activity' => $activity,
+            'details' => $encoded_details,
             'ip_address' => $ip_address,
             'created_at' => current_time('mysql', true),
         ],
@@ -56,11 +62,12 @@ function wp_activity_logger_record_activity(string $activity, ?int $user_id = nu
             '%s',
             '%s',
             '%s',
+            '%s',
         ]
     );
 }
 
-function wp_activity_logger_get_logs_payload(array $filters): array
+function kovalenko_admin_change_audit_get_logs_payload(array $filters): array
 {
     global $wpdb;
 
@@ -70,7 +77,7 @@ function wp_activity_logger_get_logs_payload(array $filters): array
     $current_page = max(1, (int) ($filters['paged'] ?? 1));
     $offset = ($current_page - 1) * $rows_per_page;
 
-    $where_params = wp_activity_logger_build_where_params($filters);
+    $where_params = kovalenko_admin_change_audit_build_where_params($filters);
 
     // Map each sortable column to a (table alias, column) pair so the ORDER BY target can be
     // passed as %i.%i identifier placeholders instead of being interpolated into the query.
@@ -87,7 +94,7 @@ function wp_activity_logger_get_logs_payload(array $filters): array
     $is_ascending = strtoupper((string) ($filters['order'] ?? 'DESC')) === 'ASC';
 
     // Every dynamic part of these queries is a real placeholder: table/column names use %i,
-    // filter values use %s (built by wp_activity_logger_build_where_params()), LIMIT/OFFSET use %d.
+    // filter values use %s (built by kovalenko_admin_change_audit_build_where_params()), LIMIT/OFFSET use %d.
     // The WHERE clause is a fixed literal: the created_at range always applies (with DATETIME
     // min/max bounds when unset) and each text filter self-disables via a `%s = ''` guard that
     // short-circuits to TRUE. No PHP variable is ever interpolated into the SQL string.
@@ -110,17 +117,17 @@ function wp_activity_logger_get_logs_payload(array $filters): array
     // ReplacementsWrongNumber is a false positive here too: ...$rows_params holds every value.
     if ($is_ascending) {
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
-        $rows = $wpdb->get_results($wpdb->prepare("SELECT logs.id, logs.user_id, logs.activity, logs.ip_address, logs.created_at, users.user_login FROM %i AS logs LEFT JOIN %i AS users ON users.ID = logs.user_id WHERE 1 = 1 AND logs.created_at >= %s AND logs.created_at <= %s AND (%s = '' OR users.user_login LIKE %s) AND (%s = '' OR logs.activity LIKE %s OR logs.ip_address LIKE %s OR users.user_login LIKE %s) AND (%s = '' OR logs.ip_address LIKE %s) ORDER BY %i.%i ASC LIMIT %d OFFSET %d", ...$rows_params));
+        $rows = $wpdb->get_results($wpdb->prepare("SELECT logs.id, logs.user_id, logs.activity, logs.details, logs.ip_address, logs.created_at, users.user_login FROM %i AS logs LEFT JOIN %i AS users ON users.ID = logs.user_id WHERE 1 = 1 AND logs.created_at >= %s AND logs.created_at <= %s AND (%s = '' OR users.user_login LIKE %s) AND (%s = '' OR logs.activity LIKE %s OR logs.ip_address LIKE %s OR users.user_login LIKE %s) AND (%s = '' OR logs.ip_address LIKE %s) ORDER BY %i.%i ASC LIMIT %d OFFSET %d", ...$rows_params));
     } else {
         // phpcs:ignore WordPress.DB.DirectDatabaseQuery.DirectQuery, WordPress.DB.DirectDatabaseQuery.NoCaching, WordPress.DB.PreparedSQLPlaceholders.ReplacementsWrongNumber
-        $rows = $wpdb->get_results($wpdb->prepare("SELECT logs.id, logs.user_id, logs.activity, logs.ip_address, logs.created_at, users.user_login FROM %i AS logs LEFT JOIN %i AS users ON users.ID = logs.user_id WHERE 1 = 1 AND logs.created_at >= %s AND logs.created_at <= %s AND (%s = '' OR users.user_login LIKE %s) AND (%s = '' OR logs.activity LIKE %s OR logs.ip_address LIKE %s OR users.user_login LIKE %s) AND (%s = '' OR logs.ip_address LIKE %s) ORDER BY %i.%i DESC LIMIT %d OFFSET %d", ...$rows_params));
+        $rows = $wpdb->get_results($wpdb->prepare("SELECT logs.id, logs.user_id, logs.activity, logs.details, logs.ip_address, logs.created_at, users.user_login FROM %i AS logs LEFT JOIN %i AS users ON users.ID = logs.user_id WHERE 1 = 1 AND logs.created_at >= %s AND logs.created_at <= %s AND (%s = '' OR users.user_login LIKE %s) AND (%s = '' OR logs.activity LIKE %s OR logs.ip_address LIKE %s OR users.user_login LIKE %s) AND (%s = '' OR logs.ip_address LIKE %s) ORDER BY %i.%i DESC LIMIT %d OFFSET %d", ...$rows_params));
     }
 
     return [
         'items' => array_map(
             static function (object $row): array {
                 $user_id = (int) $row->user_id;
-                $user_label = wp_activity_logger_resolve_user_label(
+                $user_label = kovalenko_admin_change_audit_resolve_user_label(
                     $user_id,
                     is_string($row->user_login) ? $row->user_login : ''
                 );
@@ -128,9 +135,12 @@ function wp_activity_logger_get_logs_payload(array $filters): array
                 return [
                     'id' => (int) $row->id,
                     'user' => $user_label,
-                    'activity' => wp_activity_logger_normalize_activity_text((string) $row->activity, $user_label),
+                    'activity' => kovalenko_admin_change_audit_normalize_activity_text((string) $row->activity, $user_label),
+                    'details' => kovalenko_admin_change_audit_decode_activity_details(
+                        is_string($row->details ?? null) ? $row->details : ''
+                    ),
                     'ipAddress' => (string) $row->ip_address,
-                    'createdAt' => wp_activity_logger_format_timestamp((string) $row->created_at),
+                    'createdAt' => kovalenko_admin_change_audit_format_timestamp((string) $row->created_at),
                 ];
             },
             $rows
@@ -140,8 +150,8 @@ function wp_activity_logger_get_logs_payload(array $filters): array
             'uniqueUsers' => (int) ($metrics_row->unique_users ?? 0),
             'uniqueIps' => (int) ($metrics_row->unique_ips ?? 0),
             'latestActivity' => ! empty($metrics_row->latest_activity)
-                ? wp_activity_logger_format_timestamp((string) $metrics_row->latest_activity)
-                : __('No activity yet', 'dk-user-activity-logger'),
+                ? kovalenko_admin_change_audit_format_timestamp((string) $metrics_row->latest_activity)
+                : __('No activity yet', 'kovalenko-admin-change-audit'),
         ],
         'pagination' => [
             'currentPage' => $current_page,
@@ -165,12 +175,12 @@ function wp_activity_logger_get_logs_payload(array $filters): array
  *
  * @return list<string>
  */
-function wp_activity_logger_build_where_params(array $filters): array
+function kovalenko_admin_change_audit_build_where_params(array $filters): array
 {
     global $wpdb;
 
-    $start_boundary = wp_activity_logger_get_utc_date_boundary((string) ($filters['start_date'] ?? ''), false) ?? '1000-01-01 00:00:00';
-    $end_boundary = wp_activity_logger_get_utc_date_boundary((string) ($filters['end_date'] ?? ''), true) ?? '9999-12-31 23:59:59';
+    $start_boundary = kovalenko_admin_change_audit_get_utc_date_boundary((string) ($filters['start_date'] ?? ''), false) ?? '1000-01-01 00:00:00';
+    $end_boundary = kovalenko_admin_change_audit_get_utc_date_boundary((string) ($filters['end_date'] ?? ''), true) ?? '9999-12-31 23:59:59';
     $username = (string) ($filters['username'] ?? '');
     $search = (string) ($filters['search'] ?? '');
     $ip_address = (string) ($filters['ip_address'] ?? '');
@@ -193,7 +203,7 @@ function wp_activity_logger_build_where_params(array $filters): array
     ];
 }
 
-function wp_activity_logger_format_timestamp(string $timestamp): string
+function kovalenko_admin_change_audit_format_timestamp(string $timestamp): string
 {
     $format = trim(get_option('date_format') . ' ' . get_option('time_format'));
 
@@ -204,28 +214,28 @@ function wp_activity_logger_format_timestamp(string $timestamp): string
     }
 
     return $date_time
-        ->setTimezone(wp_activity_logger_timezone())
+        ->setTimezone(kovalenko_admin_change_audit_timezone())
         ->format($format . ' T');
 }
 
-function wp_activity_logger_resolve_user_label(int $user_id, string $user_login): string
+function kovalenko_admin_change_audit_resolve_user_label(int $user_id, string $user_login): string
 {
     if ($user_login !== '') {
         return $user_login;
     }
 
     if ($user_id === 0) {
-        return __('System', 'dk-user-activity-logger');
+        return __('System', 'kovalenko-admin-change-audit');
     }
 
     return sprintf(
         /* translators: %d: WordPress user ID */
-        __('Deleted user #%d', 'dk-user-activity-logger'),
+        __('Deleted user #%d', 'kovalenko-admin-change-audit'),
         $user_id
     );
 }
 
-function wp_activity_logger_normalize_activity_text(string $activity, string $user_label): string
+function kovalenko_admin_change_audit_normalize_activity_text(string $activity, string $user_label): string
 {
     $normalized = preg_replace("/^User\\s+(?:''|\"\")\\s+/", $user_label . ' ', $activity, 1, $count);
 
@@ -236,7 +246,94 @@ function wp_activity_logger_normalize_activity_text(string $activity, string $us
     return $activity;
 }
 
-function wp_activity_logger_delete_expired_logs(int $retention_days): void
+/**
+ * @param list<array{label: string, before: string, after: string}>|null $details
+ */
+function kovalenko_admin_change_audit_encode_activity_details(?array $details): string
+{
+    if ($details === null || $details === []) {
+        return '';
+    }
+
+    $normalized = [];
+
+    foreach ($details as $detail) {
+        if (! is_array($detail)) {
+            continue;
+        }
+
+        $label = isset($detail['label']) ? trim((string) $detail['label']) : '';
+
+        if ($label === '') {
+            continue;
+        }
+
+        $normalized[] = [
+            'label' => $label,
+            'before' => kovalenko_admin_change_audit_normalize_activity_detail_value($detail['before'] ?? ''),
+            'after' => kovalenko_admin_change_audit_normalize_activity_detail_value($detail['after'] ?? ''),
+        ];
+    }
+
+    if ($normalized === []) {
+        return '';
+    }
+
+    $encoded = wp_json_encode($normalized);
+
+    return is_string($encoded) ? $encoded : '';
+}
+
+/**
+ * @return list<array{label: string, before: string, after: string}>
+ */
+function kovalenko_admin_change_audit_decode_activity_details(string $details_json): array
+{
+    if ($details_json === '') {
+        return [];
+    }
+
+    $decoded = json_decode($details_json, true);
+
+    if (! is_array($decoded)) {
+        return [];
+    }
+
+    $details = [];
+
+    foreach ($decoded as $detail) {
+        if (! is_array($detail)) {
+            continue;
+        }
+
+        $label = isset($detail['label']) ? trim((string) $detail['label']) : '';
+
+        if ($label === '') {
+            continue;
+        }
+
+        $details[] = [
+            'label' => $label,
+            'before' => kovalenko_admin_change_audit_normalize_activity_detail_value($detail['before'] ?? ''),
+            'after' => kovalenko_admin_change_audit_normalize_activity_detail_value($detail['after'] ?? ''),
+        ];
+    }
+
+    return $details;
+}
+
+/**
+ * @param scalar|null $value
+ */
+function kovalenko_admin_change_audit_normalize_activity_detail_value($value): string
+{
+    $normalized = wp_check_invalid_utf8((string) $value);
+    $normalized = str_replace(["\r\n", "\r"], "\n", $normalized);
+
+    return trim($normalized);
+}
+
+function kovalenko_admin_change_audit_delete_expired_logs(int $retention_days): void
 {
     global $wpdb;
 
@@ -253,35 +350,35 @@ function wp_activity_logger_delete_expired_logs(int $retention_days): void
     );
 }
 
-function wp_activity_logger_default_timezone_name(): string
+function kovalenko_admin_change_audit_default_timezone_name(): string
 {
     return 'America/Edmonton';
 }
 
-function wp_activity_logger_is_valid_timezone(string $timezone_name): bool
+function kovalenko_admin_change_audit_is_valid_timezone(string $timezone_name): bool
 {
     return in_array($timezone_name, timezone_identifiers_list(), true);
 }
 
-function wp_activity_logger_timezone_name(): string
+function kovalenko_admin_change_audit_timezone_name(): string
 {
-    $timezone_name = (string) get_option('wp_activity_logger_timezone', '');
+    $timezone_name = (string) get_option('kovalenko_admin_change_audit_timezone', '');
 
-    if (wp_activity_logger_is_valid_timezone($timezone_name)) {
+    if (kovalenko_admin_change_audit_is_valid_timezone($timezone_name)) {
         return $timezone_name;
     }
 
-    return wp_activity_logger_default_timezone_name();
+    return kovalenko_admin_change_audit_default_timezone_name();
 }
 
-function wp_activity_logger_timezone(): DateTimeZone
+function kovalenko_admin_change_audit_timezone(): DateTimeZone
 {
-    return new DateTimeZone(wp_activity_logger_timezone_name());
+    return new DateTimeZone(kovalenko_admin_change_audit_timezone_name());
 }
 
-function wp_activity_logger_next_maintenance_timestamp(): int
+function kovalenko_admin_change_audit_next_maintenance_timestamp(): int
 {
-    $next_run = new DateTimeImmutable('now', wp_activity_logger_timezone());
+    $next_run = new DateTimeImmutable('now', kovalenko_admin_change_audit_timezone());
     $next_run = $next_run->setTime(2, 0);
 
     if ($next_run->getTimestamp() <= time()) {
@@ -291,7 +388,7 @@ function wp_activity_logger_next_maintenance_timestamp(): int
     return $next_run->getTimestamp();
 }
 
-function wp_activity_logger_get_utc_date_boundary(string $date, bool $end_of_day): ?string
+function kovalenko_admin_change_audit_get_utc_date_boundary(string $date, bool $end_of_day): ?string
 {
     if ($date === '') {
         return null;
@@ -300,7 +397,7 @@ function wp_activity_logger_get_utc_date_boundary(string $date, bool $end_of_day
     $time = $end_of_day ? '23:59:59' : '00:00:00';
 
     try {
-        $date_time = new DateTimeImmutable($date . ' ' . $time, wp_activity_logger_timezone());
+        $date_time = new DateTimeImmutable($date . ' ' . $time, kovalenko_admin_change_audit_timezone());
     } catch (Exception) {
         return null;
     }

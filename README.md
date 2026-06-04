@@ -1,6 +1,6 @@
-# DK User Activity Logger
+# Kovalenko Admin Change Audit
 
-DK User Activity Logger records important WordPress activity and provides a dedicated log viewer for the site owner. It is designed for situations where you need a clear audit trail of client actions.
+Kovalenko Admin Change Audit records important WordPress activity and provides a dedicated log viewer for the site owner. It is designed for situations where you need a clear audit trail of client actions.
 
 ## Features
 
@@ -18,13 +18,13 @@ DK User Activity Logger records important WordPress activity and provides a dedi
 
 ## Requirements
 
-- WordPress 6.0+
+- WordPress 6.2+
 - PHP 8.1+
 
 ## Plugin Structure
 
 ```text
-wp-logs/
+kovalenko-admin-change-audit/
 ├── assets/
 │   ├── admin.css
 │   └── admin.js
@@ -42,7 +42,7 @@ wp-logs/
 
 ## Installation
 
-1. Upload the plugin to `wp-content/plugins/wp-logs`.
+1. Upload the plugin to `wp-content/plugins/kovalenko-admin-change-audit`.
 2. Activate the plugin in WordPress.
 3. On activation, the plugin:
    - creates the activity log table
@@ -54,7 +54,7 @@ wp-logs/
 
 The owner can access the log viewer from the WordPress `Tools` menu.
 
-After activation, the plugin also shows the owner a direct link in the admin notices area.
+After activation, the plugin also shows the owner a direct link on the Plugins screen and on the dedicated log screen.
 
 The owner can also access the screen from the admin bar while logged in.
 
@@ -74,7 +74,7 @@ When a password is configured:
 You can also define a password in code through `wp-config.php`:
 
 ```php
-define('WP_ACTIVITY_LOGGER_ACCESS_PASSWORD', 'your-strong-password');
+define('KOVALENKO_ADMIN_CHANGE_AUDIT_ACCESS_PASSWORD', 'your-strong-password');
 ```
 
 If this constant is present, it takes precedence over the password saved in the UI.
@@ -118,7 +118,6 @@ The plugin currently logs:
 - Admin UI: [includes/admin_show_page.php](/Users/dmytrokovalenko/Documents/Projects/WordpressStarter/app/plugins/wp-logs/includes/admin_show_page.php)
 - Database layer: [includes/data_base_queries.php](/Users/dmytrokovalenko/Documents/Projects/WordpressStarter/app/plugins/wp-logs/includes/data_base_queries.php)
 - WordPress.org readme: [readme.txt](/Users/dmytrokovalenko/Documents/Projects/WordpressStarter/app/plugins/wp-logs/readme.txt)
-- Deployment notes: [DEPLOYMENT.md](/Users/dmytrokovalenko/Documents/Projects/WordpressStarter/app/plugins/wp-logs/DEPLOYMENT.md)
 
 ## Security Notes
 

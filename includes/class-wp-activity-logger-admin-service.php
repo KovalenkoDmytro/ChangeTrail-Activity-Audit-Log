@@ -6,7 +6,7 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-final class WPActivityLoggerAdminService
+final class Kovalenko_Admin_Change_Audit_Admin_Service
 {
     public function __construct(
         private readonly string $plugin_file,
@@ -24,7 +24,7 @@ final class WPActivityLoggerAdminService
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_assets']);
         add_action('admin_bar_menu', [$this, 'register_admin_bar_link'], 90);
         add_action('admin_notices', [$this, 'render_access_notice']);
-        add_action('wp_ajax_wp_activity_logger_fetch_logs', [$this, 'handle_fetch_logs']);
+        add_action('wp_ajax_kovalenko_admin_change_audit_fetch_logs', [$this, 'handle_fetch_logs']);
 
         add_filter('plugin_row_meta', [$this, 'add_plugin_row_meta_link'], 10, 4);
     }
@@ -33,7 +33,7 @@ final class WPActivityLoggerAdminService
     {
         $this->ensure_access_slug();
         $this->persist_owner_user_id(get_current_user_id());
-        update_option(WPActivityLoggerPlugin::OPTION_SHOW_ACCESS_NOTICE, 'yes', false);
+        update_option(Kovalenko_Admin_Change_Audit_Plugin::OPTION_SHOW_ACCESS_NOTICE, 'yes', false);
         ($this->schedule_maintenance)();
     }
 
@@ -41,7 +41,7 @@ final class WPActivityLoggerAdminService
     {
         $this->ensure_access_slug();
 
-        if ($this->get_owner_user_id() > 0 || ! current_user_can(WPActivityLoggerPlugin::VIEW_CAPABILITY)) {
+        if ($this->get_owner_user_id() > 0 || ! current_user_can(Kovalenko_Admin_Change_Audit_Plugin::VIEW_CAPABILITY)) {
             return;
         }
 
@@ -51,16 +51,16 @@ final class WPActivityLoggerAdminService
     public function maybe_dismiss_access_notice(): void
     {
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Nonce is verified immediately below before any state change.
-        $dismiss = isset($_GET['wp_activity_logger_dismiss_notice']) ? sanitize_text_field(wp_unslash($_GET['wp_activity_logger_dismiss_notice'])) : '';
+        $dismiss = isset($_GET['kovalenko_admin_change_audit_dismiss_notice']) ? sanitize_text_field(wp_unslash($_GET['kovalenko_admin_change_audit_dismiss_notice'])) : '';
         if ($dismiss !== '1' || ! $this->is_owner_viewer()) {
             return;
         }
 
-        check_admin_referer('wp_activity_logger_dismiss_notice');
+        check_admin_referer('kovalenko_admin_change_audit_dismiss_notice');
 
-        update_option(WPActivityLoggerPlugin::OPTION_SHOW_ACCESS_NOTICE, 'no', false);
+        update_option(Kovalenko_Admin_Change_Audit_Plugin::OPTION_SHOW_ACCESS_NOTICE, 'no', false);
 
-        wp_safe_redirect(remove_query_arg(['wp_activity_logger_dismiss_notice', '_wpnonce']));
+        wp_safe_redirect(remove_query_arg(['kovalenko_admin_change_audit_dismiss_notice', '_wpnonce']));
         exit;
     }
 
@@ -70,22 +70,22 @@ final class WPActivityLoggerAdminService
             return;
         }
 
-        $unlock_action = isset($_POST['wp_activity_logger_unlock']) ? sanitize_text_field(wp_unslash($_POST['wp_activity_logger_unlock'])) : '';
+        $unlock_action = isset($_POST['kovalenko_admin_change_audit_unlock']) ? sanitize_text_field(wp_unslash($_POST['kovalenko_admin_change_audit_unlock'])) : '';
         if ($unlock_action !== '1') {
             return;
         }
 
-        check_admin_referer('wp_activity_logger_unlock');
+        check_admin_referer('kovalenko_admin_change_audit_unlock');
 
         // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Password input must remain raw for verification after unslashing.
-        $provided_password = isset($_POST['wp_activity_logger_password']) ? (string) wp_unslash($_POST['wp_activity_logger_password']) : '';
+        $provided_password = isset($_POST['kovalenko_admin_change_audit_password']) ? (string) wp_unslash($_POST['kovalenko_admin_change_audit_password']) : '';
 
         if ($this->password_matches($provided_password)) {
-            update_user_meta(get_current_user_id(), WPActivityLoggerPlugin::USER_META_UNLOCKED_UNTIL, time() + (12 * HOUR_IN_SECONDS));
+            update_user_meta(get_current_user_id(), Kovalenko_Admin_Change_Audit_Plugin::USER_META_UNLOCKED_UNTIL, time() + (12 * HOUR_IN_SECONDS));
 
             wp_safe_redirect(
                 add_query_arg(
-                    ['wp_activity_logger_unlocked' => '1'],
+                    ['kovalenko_admin_change_audit_unlocked' => '1'],
                     $this->get_admin_page_url()
                 )
             );
@@ -94,7 +94,7 @@ final class WPActivityLoggerAdminService
 
         wp_safe_redirect(
             add_query_arg(
-                ['wp_activity_logger_access_error' => '1'],
+                ['kovalenko_admin_change_audit_access_error' => '1'],
                 $this->get_admin_page_url()
             )
         );
@@ -109,11 +109,11 @@ final class WPActivityLoggerAdminService
 
         add_submenu_page(
             'tools.php',
-            __('Activity Logs', 'dk-user-activity-logger'),
-            __('Activity Logs', 'dk-user-activity-logger'),
-            WPActivityLoggerPlugin::VIEW_CAPABILITY,
+            __('Activity Logs', 'kovalenko-admin-change-audit'),
+            __('Activity Logs', 'kovalenko-admin-change-audit'),
+            Kovalenko_Admin_Change_Audit_Plugin::VIEW_CAPABILITY,
             $this->get_access_slug(),
-            'wp_activity_logger_admin_page'
+            'kovalenko_admin_change_audit_admin_page'
         );
     }
 
@@ -127,14 +127,14 @@ final class WPActivityLoggerAdminService
         $script_path = dirname(__DIR__) . '/assets/admin.js';
 
         wp_enqueue_style(
-            'wp-logs-admin',
+            'kovalenko-admin-change-audit-admin',
             plugins_url('assets/admin.css', $this->plugin_file),
             [],
             (string) filemtime($style_path)
         );
 
         wp_enqueue_script(
-            'wp-logs-admin',
+            'kovalenko-admin-change-audit-admin',
             plugins_url('assets/admin.js', $this->plugin_file),
             [],
             (string) filemtime($script_path),
@@ -142,22 +142,26 @@ final class WPActivityLoggerAdminService
         );
 
         wp_localize_script(
-            'wp-logs-admin',
-            'wpActivityLoggerConfig',
+            'kovalenko-admin-change-audit-admin',
+            'kovalenkoAdminChangeAuditConfig',
             [
                 'ajaxUrl' => admin_url('admin-ajax.php'),
-                'nonce' => wp_create_nonce('wp_activity_logger_fetch_logs'),
+                'nonce' => wp_create_nonce('kovalenko_admin_change_audit_fetch_logs'),
                 'defaultRefreshSeconds' => 30,
                 'pageUrl' => $this->get_admin_page_url(),
                 'siteDateFormat' => trim(get_option('date_format') . ' ' . get_option('time_format')),
                 'timezone' => $this->get_timezone_name(),
                 'strings' => [
-                    'loading' => __('Refreshing logs...', 'dk-user-activity-logger'),
-                    'ready' => __('Live refresh ready', 'dk-user-activity-logger'),
-                    'updated' => __('Updated just now', 'dk-user-activity-logger'),
-                    'empty' => __('No matching logs found.', 'dk-user-activity-logger'),
-                    'error' => __('Could not refresh the logs right now.', 'dk-user-activity-logger'),
-                    'locked' => __('This screen is locked.', 'dk-user-activity-logger'),
+                    'loading' => __('Refreshing logs...', 'kovalenko-admin-change-audit'),
+                    'ready' => __('Live refresh ready', 'kovalenko-admin-change-audit'),
+                    'updated' => __('Updated just now', 'kovalenko-admin-change-audit'),
+                    'empty' => __('No matching logs found.', 'kovalenko-admin-change-audit'),
+                    'error' => __('Could not refresh the logs right now.', 'kovalenko-admin-change-audit'),
+                    'locked' => __('This screen is locked.', 'kovalenko-admin-change-audit'),
+                    'viewChanges' => __('View changes', 'kovalenko-admin-change-audit'),
+                    'before' => __('Before', 'kovalenko-admin-change-audit'),
+                    'after' => __('After', 'kovalenko-admin-change-audit'),
+                    'emptyValue' => __('Empty value', 'kovalenko-admin-change-audit'),
                 ],
             ]
         );
@@ -171,11 +175,11 @@ final class WPActivityLoggerAdminService
 
         $admin_bar->add_node(
             [
-                'id' => 'wp-logs',
-                'title' => __('Activity Logs', 'dk-user-activity-logger'),
+                'id' => 'kovalenko-admin-change-audit',
+                'title' => __('Activity Logs', 'kovalenko-admin-change-audit'),
                 'href' => $this->get_admin_page_url(),
                 'meta' => [
-                    'class' => 'wp-logs-admin-bar-link',
+                    'class' => 'kovalenko-admin-change-audit-admin-bar-link',
                 ],
             ]
         );
@@ -183,43 +187,47 @@ final class WPActivityLoggerAdminService
 
     public function render_access_notice(): void
     {
-        if (! $this->is_owner_viewer() || get_option(WPActivityLoggerPlugin::OPTION_SHOW_ACCESS_NOTICE, 'no') !== 'yes') {
+        if (
+            ! $this->is_owner_viewer()
+            || get_option(Kovalenko_Admin_Change_Audit_Plugin::OPTION_SHOW_ACCESS_NOTICE, 'no') !== 'yes'
+            || ! $this->should_render_access_notice()
+        ) {
             return;
         }
 
         $dismiss_url = wp_nonce_url(
-            add_query_arg(['wp_activity_logger_dismiss_notice' => '1']),
-            'wp_activity_logger_dismiss_notice'
+            add_query_arg(['kovalenko_admin_change_audit_dismiss_notice' => '1']),
+            'kovalenko_admin_change_audit_dismiss_notice'
         );
 
         echo '<div class="notice notice-success is-dismissible">';
-        echo '<p><strong>' . esc_html__('DK User Activity Logger is ready to use.', 'dk-user-activity-logger') . '</strong></p>';
-        echo '<p>' . esc_html__('Open Activity Logs from the Tools menu, or use this direct link:', 'dk-user-activity-logger') . '</p>';
+        echo '<p><strong>' . esc_html__('Kovalenko Admin Change Audit is ready to use.', 'kovalenko-admin-change-audit') . '</strong></p>';
+        echo '<p>' . esc_html__('Open Activity Logs from the Tools menu, or use this direct link:', 'kovalenko-admin-change-audit') . '</p>';
         echo '<p><a href="' . esc_url($this->get_admin_page_url()) . '">' . esc_html($this->get_admin_page_url()) . '</a></p>';
 
         if ($this->is_password_required()) {
-            echo '<p>' . esc_html__('This screen also requires your access password.', 'dk-user-activity-logger') . '</p>';
+            echo '<p>' . esc_html__('This screen also requires your access password.', 'kovalenko-admin-change-audit') . '</p>';
         }
 
-        echo '<p><a href="' . esc_url($dismiss_url) . '">' . esc_html__('Dismiss this notice', 'dk-user-activity-logger') . '</a></p>';
+        echo '<p><a href="' . esc_url($dismiss_url) . '">' . esc_html__('Dismiss this notice', 'kovalenko-admin-change-audit') . '</a></p>';
         echo '</div>';
     }
 
     public function handle_fetch_logs(): void
     {
         if (! $this->is_owner_viewer()) {
-            wp_send_json_error(['message' => __('You are not allowed to view these logs.', 'dk-user-activity-logger')], 403);
+            wp_send_json_error(['message' => __('You are not allowed to view these logs.', 'kovalenko-admin-change-audit')], 403);
         }
 
         if ($this->is_password_required() && ! $this->is_screen_unlocked()) {
-            wp_send_json_error(['message' => __('The log screen is locked.', 'dk-user-activity-logger')], 423);
+            wp_send_json_error(['message' => __('The log screen is locked.', 'kovalenko-admin-change-audit')], 423);
         }
 
-        check_ajax_referer('wp_activity_logger_fetch_logs', 'nonce');
+        check_ajax_referer('kovalenko_admin_change_audit_fetch_logs', 'nonce');
 
         // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- AJAX request is verified by check_ajax_referer() above.
-        $filters = wp_activity_logger_normalize_filters(wp_unslash($_POST));
-        wp_send_json_success(wp_activity_logger_get_logs_payload($filters));
+        $filters = kovalenko_admin_change_audit_normalize_filters(wp_unslash($_POST));
+        wp_send_json_success(kovalenko_admin_change_audit_get_logs_payload($filters));
     }
 
     public function add_plugin_row_meta_link(array $plugin_meta, string $plugin_file, array $plugin_data, string $status): array
@@ -233,7 +241,7 @@ final class WPActivityLoggerAdminService
         $plugin_meta[] = sprintf(
             '<a href="%s">%s</a>',
             esc_url($this->get_admin_page_url()),
-            esc_html__('Logs', 'dk-user-activity-logger')
+            esc_html__('Logs', 'kovalenko-admin-change-audit')
         );
 
         return $plugin_meta;
@@ -250,7 +258,7 @@ final class WPActivityLoggerAdminService
             return true;
         }
 
-        return (int) get_user_meta(get_current_user_id(), WPActivityLoggerPlugin::USER_META_UNLOCKED_UNTIL, true) > time();
+        return (int) get_user_meta(get_current_user_id(), Kovalenko_Admin_Change_Audit_Plugin::USER_META_UNLOCKED_UNTIL, true) > time();
     }
 
     public function get_admin_page_url(): string
@@ -278,7 +286,7 @@ final class WPActivityLoggerAdminService
 
     public function get_timezone_name(): string
     {
-        return wp_activity_logger_timezone_name();
+        return kovalenko_admin_change_audit_timezone_name();
     }
 
     public function maybe_save_security_settings(): void
@@ -287,20 +295,20 @@ final class WPActivityLoggerAdminService
             return;
         }
 
-        $action = isset($_POST['wp_activity_logger_save_security']) ? sanitize_text_field(wp_unslash($_POST['wp_activity_logger_save_security'])) : '';
+        $action = isset($_POST['kovalenko_admin_change_audit_save_security']) ? sanitize_text_field(wp_unslash($_POST['kovalenko_admin_change_audit_save_security'])) : '';
         if ($action !== '1') {
             return;
         }
 
-        check_admin_referer('wp_activity_logger_save_security');
+        check_admin_referer('kovalenko_admin_change_audit_save_security');
 
-        $remove_password = isset($_POST['wp_activity_logger_remove_password']) && sanitize_text_field(wp_unslash($_POST['wp_activity_logger_remove_password'])) === '1';
+        $remove_password = isset($_POST['kovalenko_admin_change_audit_remove_password']) && sanitize_text_field(wp_unslash($_POST['kovalenko_admin_change_audit_remove_password'])) === '1';
         if ($remove_password) {
-            delete_option(WPActivityLoggerPlugin::OPTION_ACCESS_PASSWORD_HASH);
+            delete_option(Kovalenko_Admin_Change_Audit_Plugin::OPTION_ACCESS_PASSWORD_HASH);
 
             wp_safe_redirect(
                 add_query_arg(
-                    ['wp_activity_logger_security_saved' => 'removed'],
+                    ['kovalenko_admin_change_audit_security_saved' => 'removed'],
                     $this->get_admin_page_url()
                 )
             );
@@ -308,25 +316,25 @@ final class WPActivityLoggerAdminService
         }
 
         // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Password input must remain raw for hashing after unslashing.
-        $password = isset($_POST['wp_activity_logger_new_password']) ? trim((string) wp_unslash($_POST['wp_activity_logger_new_password'])) : '';
+        $password = isset($_POST['kovalenko_admin_change_audit_new_password']) ? trim((string) wp_unslash($_POST['kovalenko_admin_change_audit_new_password'])) : '';
         // phpcs:ignore WordPress.Security.ValidatedSanitizedInput.InputNotSanitized -- Password input must remain raw for comparison after unslashing.
-        $password_confirm = isset($_POST['wp_activity_logger_confirm_password']) ? trim((string) wp_unslash($_POST['wp_activity_logger_confirm_password'])) : '';
+        $password_confirm = isset($_POST['kovalenko_admin_change_audit_confirm_password']) ? trim((string) wp_unslash($_POST['kovalenko_admin_change_audit_confirm_password'])) : '';
 
         if ($password === '' || $password_confirm === '' || $password !== $password_confirm) {
             wp_safe_redirect(
                 add_query_arg(
-                    ['wp_activity_logger_security_error' => 'mismatch'],
+                    ['kovalenko_admin_change_audit_security_error' => 'mismatch'],
                     $this->get_admin_page_url()
                 )
             );
             exit;
         }
 
-        update_option(WPActivityLoggerPlugin::OPTION_ACCESS_PASSWORD_HASH, wp_hash_password($password), false);
+        update_option(Kovalenko_Admin_Change_Audit_Plugin::OPTION_ACCESS_PASSWORD_HASH, wp_hash_password($password), false);
 
         wp_safe_redirect(
             add_query_arg(
-                ['wp_activity_logger_security_saved' => 'updated'],
+                ['kovalenko_admin_change_audit_security_saved' => 'updated'],
                 $this->get_admin_page_url()
             )
         );
@@ -339,32 +347,32 @@ final class WPActivityLoggerAdminService
             return;
         }
 
-        $action = isset($_POST['wp_activity_logger_save_timezone']) ? sanitize_text_field(wp_unslash($_POST['wp_activity_logger_save_timezone'])) : '';
+        $action = isset($_POST['kovalenko_admin_change_audit_save_timezone']) ? sanitize_text_field(wp_unslash($_POST['kovalenko_admin_change_audit_save_timezone'])) : '';
         if ($action !== '1') {
             return;
         }
 
-        check_admin_referer('wp_activity_logger_save_timezone');
+        check_admin_referer('kovalenko_admin_change_audit_save_timezone');
 
-        $timezone_name = isset($_POST['wp_activity_logger_timezone']) ? sanitize_text_field(wp_unslash($_POST['wp_activity_logger_timezone'])) : '';
-        if (! wp_activity_logger_is_valid_timezone($timezone_name)) {
+        $timezone_name = isset($_POST['kovalenko_admin_change_audit_timezone']) ? sanitize_text_field(wp_unslash($_POST['kovalenko_admin_change_audit_timezone'])) : '';
+        if (! kovalenko_admin_change_audit_is_valid_timezone($timezone_name)) {
             wp_safe_redirect(
                 add_query_arg(
-                    ['wp_activity_logger_timezone_error' => 'invalid'],
+                    ['kovalenko_admin_change_audit_timezone_error' => 'invalid'],
                     $this->get_admin_page_url()
                 )
             );
             exit;
         }
 
-        update_option(WPActivityLoggerPlugin::OPTION_TIMEZONE, $timezone_name, false);
-        wp_clear_scheduled_hook(WPActivityLoggerPlugin::NIGHTLY_MAINTENANCE_HOOK);
-        wp_clear_scheduled_hook('wp_activity_logger_nightly_update');
+        update_option(Kovalenko_Admin_Change_Audit_Plugin::OPTION_TIMEZONE, $timezone_name, false);
+        wp_clear_scheduled_hook(Kovalenko_Admin_Change_Audit_Plugin::NIGHTLY_MAINTENANCE_HOOK);
+        wp_clear_scheduled_hook('kovalenko_admin_change_audit_nightly_update');
         ($this->schedule_maintenance)();
 
         wp_safe_redirect(
             add_query_arg(
-                ['wp_activity_logger_timezone_saved' => 'updated'],
+                ['kovalenko_admin_change_audit_timezone_saved' => 'updated'],
                 $this->get_admin_page_url()
             )
         );
@@ -390,7 +398,7 @@ final class WPActivityLoggerAdminService
 
     private function is_owner_viewer(): bool
     {
-        if (! current_user_can(WPActivityLoggerPlugin::VIEW_CAPABILITY)) {
+        if (! current_user_can(Kovalenko_Admin_Change_Audit_Plugin::VIEW_CAPABILITY)) {
             return false;
         }
 
@@ -404,7 +412,7 @@ final class WPActivityLoggerAdminService
 
     private function get_owner_user_id(): int
     {
-        return (int) get_option(WPActivityLoggerPlugin::OPTION_OWNER_USER_ID, 0);
+        return (int) get_option(Kovalenko_Admin_Change_Audit_Plugin::OPTION_OWNER_USER_ID, 0);
     }
 
     private function persist_owner_user_id(int $user_id): void
@@ -413,35 +421,49 @@ final class WPActivityLoggerAdminService
             return;
         }
 
-        update_option(WPActivityLoggerPlugin::OPTION_OWNER_USER_ID, $user_id, false);
+        update_option(Kovalenko_Admin_Change_Audit_Plugin::OPTION_OWNER_USER_ID, $user_id, false);
     }
 
     private function ensure_access_slug(): string
     {
-        $slug = (string) get_option(WPActivityLoggerPlugin::OPTION_ACCESS_SLUG, '');
+        $slug = (string) get_option(Kovalenko_Admin_Change_Audit_Plugin::OPTION_ACCESS_SLUG, '');
         if ($slug !== '') {
             return $slug;
         }
 
-        $slug = sprintf('wp-activity-logs-%s', strtolower(wp_generate_password(10, false, false)));
-        update_option(WPActivityLoggerPlugin::OPTION_ACCESS_SLUG, $slug, false);
-        update_option(WPActivityLoggerPlugin::OPTION_SHOW_ACCESS_NOTICE, 'yes', false);
+        $slug = sprintf('kovalenko-activity-logs-%s', strtolower(wp_generate_password(10, false, false)));
+        update_option(Kovalenko_Admin_Change_Audit_Plugin::OPTION_ACCESS_SLUG, $slug, false);
+        update_option(Kovalenko_Admin_Change_Audit_Plugin::OPTION_SHOW_ACCESS_NOTICE, 'yes', false);
 
         return $slug;
     }
 
+    private function should_render_access_notice(): bool
+    {
+        if (! function_exists('get_current_screen')) {
+            return false;
+        }
+
+        $screen = get_current_screen();
+        if (! $screen instanceof \WP_Screen) {
+            return false;
+        }
+
+        return $screen->base === 'plugins' || $screen->id === sprintf('tools_page_%s', $this->get_access_slug());
+    }
+
     private function get_access_password(): string
     {
-        $password = defined(WPActivityLoggerPlugin::ACCESS_PASSWORD_CONST)
-            ? trim((string) constant(WPActivityLoggerPlugin::ACCESS_PASSWORD_CONST))
+        $password = defined(Kovalenko_Admin_Change_Audit_Plugin::ACCESS_PASSWORD_CONST)
+            ? trim((string) constant(Kovalenko_Admin_Change_Audit_Plugin::ACCESS_PASSWORD_CONST))
             : '';
 
-        return (string) apply_filters('wp_activity_logger_access_password', $password);
+        return (string) apply_filters('kovalenko_admin_change_audit_access_password', $password);
     }
 
     private function get_saved_password_hash(): string
     {
-        return (string) get_option(WPActivityLoggerPlugin::OPTION_ACCESS_PASSWORD_HASH, '');
+        return (string) get_option(Kovalenko_Admin_Change_Audit_Plugin::OPTION_ACCESS_PASSWORD_HASH, '');
     }
 
     private function password_matches(string $provided_password): bool

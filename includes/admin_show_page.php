@@ -6,7 +6,7 @@ if (! defined('ABSPATH')) {
     exit;
 }
 
-function wp_activity_logger_normalize_filters(array $source): array
+function kovalenko_admin_change_audit_normalize_filters(array $source): array
 {
     $allowed_order_columns = ['id', 'user', 'activity', 'ip_address', 'created_at'];
     $allowed_order = ['ASC', 'DESC'];
@@ -34,66 +34,66 @@ function wp_activity_logger_normalize_filters(array $source): array
     ];
 }
 
-function wp_activity_logger_admin_page(): void
+function kovalenko_admin_change_audit_admin_page(): void
 {
-    if (! wp_activity_logger()->can_view_logs()) {
-        wp_die(esc_html__('You are not allowed to view these logs.', 'dk-user-activity-logger'));
+    if (! kovalenko_admin_change_audit()->can_view_logs()) {
+        wp_die(esc_html__('You are not allowed to view these logs.', 'kovalenko-admin-change-audit'));
     }
 
-    $page_url = wp_activity_logger()->get_admin_page_url();
-    $show_unlock = wp_activity_logger()->is_password_required() && ! wp_activity_logger()->is_screen_unlocked();
+    $page_url = kovalenko_admin_change_audit()->get_admin_page_url();
+    $show_unlock = kovalenko_admin_change_audit()->is_password_required() && ! kovalenko_admin_change_audit()->is_screen_unlocked();
 
     echo '<div class="wrap wp-activity-logger-shell">';
-    echo '<h1>' . esc_html__('Activity Logs', 'dk-user-activity-logger') . '</h1>';
+    echo '<h1>' . esc_html__('Activity Logs', 'kovalenko-admin-change-audit') . '</h1>';
 
     // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin notice flag from the current screen URL.
-    $has_unlock_error = isset($_GET['wp_activity_logger_access_error']) && sanitize_text_field(wp_unslash($_GET['wp_activity_logger_access_error'])) === '1';
+    $has_unlock_error = isset($_GET['kovalenko_admin_change_audit_access_error']) && sanitize_text_field(wp_unslash($_GET['kovalenko_admin_change_audit_access_error'])) === '1';
     // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin notice flag from the current screen URL.
-    $security_saved = isset($_GET['wp_activity_logger_security_saved']) ? sanitize_text_field(wp_unslash($_GET['wp_activity_logger_security_saved'])) : '';
+    $security_saved = isset($_GET['kovalenko_admin_change_audit_security_saved']) ? sanitize_text_field(wp_unslash($_GET['kovalenko_admin_change_audit_security_saved'])) : '';
     // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin notice flag from the current screen URL.
-    $security_error = isset($_GET['wp_activity_logger_security_error']) ? sanitize_text_field(wp_unslash($_GET['wp_activity_logger_security_error'])) : '';
+    $security_error = isset($_GET['kovalenko_admin_change_audit_security_error']) ? sanitize_text_field(wp_unslash($_GET['kovalenko_admin_change_audit_security_error'])) : '';
     // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin notice flag from the current screen URL.
-    $timezone_saved = isset($_GET['wp_activity_logger_timezone_saved']) ? sanitize_text_field(wp_unslash($_GET['wp_activity_logger_timezone_saved'])) : '';
+    $timezone_saved = isset($_GET['kovalenko_admin_change_audit_timezone_saved']) ? sanitize_text_field(wp_unslash($_GET['kovalenko_admin_change_audit_timezone_saved'])) : '';
     // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin notice flag from the current screen URL.
-    $timezone_error = isset($_GET['wp_activity_logger_timezone_error']) ? sanitize_text_field(wp_unslash($_GET['wp_activity_logger_timezone_error'])) : '';
+    $timezone_error = isset($_GET['kovalenko_admin_change_audit_timezone_error']) ? sanitize_text_field(wp_unslash($_GET['kovalenko_admin_change_audit_timezone_error'])) : '';
 
     if ($show_unlock) {
-        wp_activity_logger_render_unlock_screen($page_url, $has_unlock_error);
+        kovalenko_admin_change_audit_render_unlock_screen($page_url, $has_unlock_error);
         echo '</div>';
 
         return;
     }
 
     // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only filter values are accepted from the current admin screen URL.
-    $filters = wp_activity_logger_normalize_filters(wp_unslash($_GET));
-    $payload = wp_activity_logger_get_logs_payload($filters);
+    $filters = kovalenko_admin_change_audit_normalize_filters(wp_unslash($_GET));
+    $payload = kovalenko_admin_change_audit_get_logs_payload($filters);
 
-    wp_activity_logger_render_dashboard($page_url, $filters, $payload, $security_saved, $security_error, $timezone_saved, $timezone_error);
+    kovalenko_admin_change_audit_render_dashboard($page_url, $filters, $payload, $security_saved, $security_error, $timezone_saved, $timezone_error);
     echo '</div>';
 }
 
-function wp_activity_logger_render_unlock_screen(string $page_url, bool $has_error): void
+function kovalenko_admin_change_audit_render_unlock_screen(string $page_url, bool $has_error): void
 {
     echo '<div class="wp-activity-logger-lock-card">';
-    echo '<p class="wp-activity-logger-eyebrow">' . esc_html__('Protected screen', 'dk-user-activity-logger') . '</p>';
-    echo '<h2>' . esc_html__('Unlock the log viewer', 'dk-user-activity-logger') . '</h2>';
-    echo '<p>' . esc_html__('This viewer is protected with an access password when one is configured.', 'dk-user-activity-logger') . '</p>';
+    echo '<p class="wp-activity-logger-eyebrow">' . esc_html__('Protected screen', 'kovalenko-admin-change-audit') . '</p>';
+    echo '<h2>' . esc_html__('Unlock the log viewer', 'kovalenko-admin-change-audit') . '</h2>';
+    echo '<p>' . esc_html__('This viewer is protected with an access password when one is configured.', 'kovalenko-admin-change-audit') . '</p>';
 
     if ($has_error) {
-        echo '<div class="notice notice-error inline"><p>' . esc_html__('The password did not match. Try again.', 'dk-user-activity-logger') . '</p></div>';
+        echo '<div class="notice notice-error inline"><p>' . esc_html__('The password did not match. Try again.', 'kovalenko-admin-change-audit') . '</p></div>';
     }
 
     echo '<form method="post" action="' . esc_url($page_url) . '" class="wp-activity-logger-unlock-form">';
-    wp_nonce_field('wp_activity_logger_unlock');
-    echo '<input type="hidden" name="wp_activity_logger_unlock" value="1">';
-    echo '<label for="wp-activity-logger-password">' . esc_html__('Access password', 'dk-user-activity-logger') . '</label>';
-    echo '<input id="wp-activity-logger-password" name="wp_activity_logger_password" type="password" class="regular-text" autocomplete="current-password" required>';
-    echo '<button type="submit" class="button button-primary">' . esc_html__('Unlock logs', 'dk-user-activity-logger') . '</button>';
+    wp_nonce_field('kovalenko_admin_change_audit_unlock');
+    echo '<input type="hidden" name="kovalenko_admin_change_audit_unlock" value="1">';
+    echo '<label for="wp-activity-logger-password">' . esc_html__('Access password', 'kovalenko-admin-change-audit') . '</label>';
+    echo '<input id="wp-activity-logger-password" name="kovalenko_admin_change_audit_password" type="password" class="regular-text" autocomplete="current-password" required>';
+    echo '<button type="submit" class="button button-primary">' . esc_html__('Unlock logs', 'kovalenko-admin-change-audit') . '</button>';
     echo '</form>';
     echo '</div>';
 }
 
-function wp_activity_logger_render_dashboard(
+function kovalenko_admin_change_audit_render_dashboard(
     string $page_url,
     array $filters,
     array $payload,
@@ -111,89 +111,89 @@ function wp_activity_logger_render_dashboard(
 
     echo '<section class="wp-activity-logger-hero">';
     echo '<div>';
-    echo '<p class="wp-activity-logger-eyebrow">' . esc_html__('Owner activity monitor', 'dk-user-activity-logger') . '</p>';
-    echo '<h2>' . esc_html__('A cleaner audit trail for client work', 'dk-user-activity-logger') . '</h2>';
-    echo '<p>' . esc_html__('Track edits, plugin changes, and login activity from a dedicated Activity Logs screen.', 'dk-user-activity-logger') . '</p>';
+    echo '<p class="wp-activity-logger-eyebrow">' . esc_html__('Owner activity monitor', 'kovalenko-admin-change-audit') . '</p>';
+    echo '<h2>' . esc_html__('A cleaner audit trail for client work', 'kovalenko-admin-change-audit') . '</h2>';
+    echo '<p>' . esc_html__('Track edits, plugin changes, and login activity from a dedicated Activity Logs screen.', 'kovalenko-admin-change-audit') . '</p>';
     echo '</div>';
     echo '<div class="wp-activity-logger-actions">';
-    echo '<a class="button button-secondary" href="' . esc_url($page_url) . '">' . esc_html__('Reset view', 'dk-user-activity-logger') . '</a>';
-    echo '<button type="button" class="button button-primary" data-refresh-now>' . esc_html__('Refresh now', 'dk-user-activity-logger') . '</button>';
+    echo '<a class="button button-secondary" href="' . esc_url($page_url) . '">' . esc_html__('Reset view', 'kovalenko-admin-change-audit') . '</a>';
+    echo '<button type="button" class="button button-primary" data-refresh-now>' . esc_html__('Refresh now', 'kovalenko-admin-change-audit') . '</button>';
     echo '</div>';
     echo '</section>';
 
-    wp_activity_logger_render_security_panel($page_url, $security_saved, $security_error);
-    wp_activity_logger_render_timezone_panel($page_url, $timezone_saved, $timezone_error);
+    kovalenko_admin_change_audit_render_security_panel($page_url, $security_saved, $security_error);
+    kovalenko_admin_change_audit_render_timezone_panel($page_url, $timezone_saved, $timezone_error);
 
     echo '<section class="wp-activity-logger-stats">';
-    wp_activity_logger_render_stat_card(__('Total logs', 'dk-user-activity-logger'), (string) $metrics['totalLogs'], 'total-logs');
-    wp_activity_logger_render_stat_card(__('Users seen', 'dk-user-activity-logger'), (string) $metrics['uniqueUsers'], 'unique-users');
-    wp_activity_logger_render_stat_card(__('IP addresses', 'dk-user-activity-logger'), (string) $metrics['uniqueIps'], 'unique-ips');
-    wp_activity_logger_render_stat_card(__('Latest activity', 'dk-user-activity-logger'), (string) $metrics['latestActivity'], 'latest-activity');
+    kovalenko_admin_change_audit_render_stat_card(__('Total logs', 'kovalenko-admin-change-audit'), (string) $metrics['totalLogs'], 'total-logs');
+    kovalenko_admin_change_audit_render_stat_card(__('Users seen', 'kovalenko-admin-change-audit'), (string) $metrics['uniqueUsers'], 'unique-users');
+    kovalenko_admin_change_audit_render_stat_card(__('IP addresses', 'kovalenko-admin-change-audit'), (string) $metrics['uniqueIps'], 'unique-ips');
+    kovalenko_admin_change_audit_render_stat_card(__('Latest activity', 'kovalenko-admin-change-audit'), (string) $metrics['latestActivity'], 'latest-activity');
     echo '</section>';
 
     echo '<section class="wp-activity-logger-panel">';
     echo '<form method="get" action="' . esc_url($page_url) . '" class="wp-activity-logger-filters" data-filter-form>';
     echo '<div class="wp-activity-logger-field">';
-    echo '<label for="wpal-start-date">' . esc_html__('From', 'dk-user-activity-logger') . '</label>';
+    echo '<label for="wpal-start-date">' . esc_html__('From', 'kovalenko-admin-change-audit') . '</label>';
     echo '<input id="wpal-start-date" type="date" name="start_date" value="' . esc_attr($filters['start_date']) . '">';
     echo '</div>';
     echo '<div class="wp-activity-logger-field">';
-    echo '<label for="wpal-end-date">' . esc_html__('To', 'dk-user-activity-logger') . '</label>';
+    echo '<label for="wpal-end-date">' . esc_html__('To', 'kovalenko-admin-change-audit') . '</label>';
     echo '<input id="wpal-end-date" type="date" name="end_date" value="' . esc_attr($filters['end_date']) . '">';
     echo '</div>';
     echo '<div class="wp-activity-logger-field">';
-    echo '<label for="wpal-username">' . esc_html__('Username', 'dk-user-activity-logger') . '</label>';
-    echo '<input id="wpal-username" type="text" name="username" value="' . esc_attr($filters['username']) . '" placeholder="' . esc_attr__('Filter by username', 'dk-user-activity-logger') . '">';
+    echo '<label for="wpal-username">' . esc_html__('Username', 'kovalenko-admin-change-audit') . '</label>';
+    echo '<input id="wpal-username" type="text" name="username" value="' . esc_attr($filters['username']) . '" placeholder="' . esc_attr__('Filter by username', 'kovalenko-admin-change-audit') . '">';
     echo '</div>';
     echo '<div class="wp-activity-logger-field wp-activity-logger-field-wide">';
-    echo '<label for="wpal-search">' . esc_html__('Search', 'dk-user-activity-logger') . '</label>';
-    echo '<input id="wpal-search" type="text" name="search" value="' . esc_attr($filters['search']) . '" placeholder="' . esc_attr__('Search activity text or IP address', 'dk-user-activity-logger') . '">';
+    echo '<label for="wpal-search">' . esc_html__('Search', 'kovalenko-admin-change-audit') . '</label>';
+    echo '<input id="wpal-search" type="text" name="search" value="' . esc_attr($filters['search']) . '" placeholder="' . esc_attr__('Search activity text or IP address', 'kovalenko-admin-change-audit') . '">';
     echo '</div>';
     echo '<div class="wp-activity-logger-field">';
-    echo '<label for="wpal-ip-address">' . esc_html__('IP address', 'dk-user-activity-logger') . '</label>';
-    echo '<input id="wpal-ip-address" type="text" name="ip_address" value="' . esc_attr($filters['ip_address']) . '" placeholder="' . esc_attr__('Contains...', 'dk-user-activity-logger') . '">';
+    echo '<label for="wpal-ip-address">' . esc_html__('IP address', 'kovalenko-admin-change-audit') . '</label>';
+    echo '<input id="wpal-ip-address" type="text" name="ip_address" value="' . esc_attr($filters['ip_address']) . '" placeholder="' . esc_attr__('Contains...', 'kovalenko-admin-change-audit') . '">';
     echo '</div>';
     echo '<div class="wp-activity-logger-field">';
-    echo '<label for="wpal-order-by">' . esc_html__('Sort by', 'dk-user-activity-logger') . '</label>';
+    echo '<label for="wpal-order-by">' . esc_html__('Sort by', 'kovalenko-admin-change-audit') . '</label>';
     echo '<select id="wpal-order-by" name="order_by">';
-    wp_activity_logger_render_select_option('created_at', $filters['order_by'], __('Newest activity', 'dk-user-activity-logger'));
-    wp_activity_logger_render_select_option('id', $filters['order_by'], __('Log ID', 'dk-user-activity-logger'));
-    wp_activity_logger_render_select_option('user', $filters['order_by'], __('Username', 'dk-user-activity-logger'));
-    wp_activity_logger_render_select_option('activity', $filters['order_by'], __('Activity text', 'dk-user-activity-logger'));
-    wp_activity_logger_render_select_option('ip_address', $filters['order_by'], __('IP address', 'dk-user-activity-logger'));
+    kovalenko_admin_change_audit_render_select_option('created_at', $filters['order_by'], __('Newest activity', 'kovalenko-admin-change-audit'));
+    kovalenko_admin_change_audit_render_select_option('id', $filters['order_by'], __('Log ID', 'kovalenko-admin-change-audit'));
+    kovalenko_admin_change_audit_render_select_option('user', $filters['order_by'], __('Username', 'kovalenko-admin-change-audit'));
+    kovalenko_admin_change_audit_render_select_option('activity', $filters['order_by'], __('Activity text', 'kovalenko-admin-change-audit'));
+    kovalenko_admin_change_audit_render_select_option('ip_address', $filters['order_by'], __('IP address', 'kovalenko-admin-change-audit'));
     echo '</select>';
     echo '</div>';
     echo '<div class="wp-activity-logger-field">';
-    echo '<label for="wpal-order">' . esc_html__('Direction', 'dk-user-activity-logger') . '</label>';
+    echo '<label for="wpal-order">' . esc_html__('Direction', 'kovalenko-admin-change-audit') . '</label>';
     echo '<select id="wpal-order" name="order">';
-    wp_activity_logger_render_select_option('DESC', $filters['order'], __('Descending', 'dk-user-activity-logger'));
-    wp_activity_logger_render_select_option('ASC', $filters['order'], __('Ascending', 'dk-user-activity-logger'));
+    kovalenko_admin_change_audit_render_select_option('DESC', $filters['order'], __('Descending', 'kovalenko-admin-change-audit'));
+    kovalenko_admin_change_audit_render_select_option('ASC', $filters['order'], __('Ascending', 'kovalenko-admin-change-audit'));
     echo '</select>';
     echo '</div>';
     echo '<div class="wp-activity-logger-field">';
-    echo '<label for="wpal-refresh-interval">' . esc_html__('Auto refresh', 'dk-user-activity-logger') . '</label>';
+    echo '<label for="wpal-refresh-interval">' . esc_html__('Auto refresh', 'kovalenko-admin-change-audit') . '</label>';
     echo '<select id="wpal-refresh-interval" name="refresh_interval" data-refresh-interval>';
-    echo '<option value="0">' . esc_html__('Off', 'dk-user-activity-logger') . '</option>';
-    echo '<option value="15">' . esc_html__('Every 15s', 'dk-user-activity-logger') . '</option>';
-    echo '<option value="30" selected>' . esc_html__('Every 30s', 'dk-user-activity-logger') . '</option>';
-    echo '<option value="60">' . esc_html__('Every 60s', 'dk-user-activity-logger') . '</option>';
+    echo '<option value="0">' . esc_html__('Off', 'kovalenko-admin-change-audit') . '</option>';
+    echo '<option value="15">' . esc_html__('Every 15s', 'kovalenko-admin-change-audit') . '</option>';
+    echo '<option value="30" selected>' . esc_html__('Every 30s', 'kovalenko-admin-change-audit') . '</option>';
+    echo '<option value="60">' . esc_html__('Every 60s', 'kovalenko-admin-change-audit') . '</option>';
     echo '</select>';
     echo '</div>';
     echo '<div class="wp-activity-logger-filter-actions">';
-    echo '<button type="submit" class="button button-primary">' . esc_html__('Apply filters', 'dk-user-activity-logger') . '</button>';
-    echo '<a class="button button-secondary" href="' . esc_url($page_url) . '">' . esc_html__('Clear filters', 'dk-user-activity-logger') . '</a>';
+    echo '<button type="submit" class="button button-primary">' . esc_html__('Apply filters', 'kovalenko-admin-change-audit') . '</button>';
+    echo '<a class="button button-secondary" href="' . esc_url($page_url) . '">' . esc_html__('Clear filters', 'kovalenko-admin-change-audit') . '</a>';
     echo '</div>';
     echo '</form>';
 
     echo '<div class="wp-activity-logger-meta-bar">';
-    echo '<div class="wp-activity-logger-status"><span class="wp-activity-logger-status-dot"></span><span data-refresh-status>' . esc_html__('Live refresh ready', 'dk-user-activity-logger') . '</span></div>';
+    echo '<div class="wp-activity-logger-status"><span class="wp-activity-logger-status-dot"></span><span data-refresh-status>' . esc_html__('Live refresh ready', 'kovalenko-admin-change-audit') . '</span></div>';
     echo '<div class="wp-activity-logger-meta-right">';
-    echo '<span data-last-updated>' . esc_html__('Waiting for the next refresh...', 'dk-user-activity-logger') . '</span>';
+    echo '<span data-last-updated>' . esc_html__('Waiting for the next refresh...', 'kovalenko-admin-change-audit') . '</span>';
     echo '<span class="wp-activity-logger-page-count" data-page-count>';
     echo esc_html(
         sprintf(
             /* translators: 1: current page number, 2: total page count */
-            __('Page %1$d of %2$d', 'dk-user-activity-logger'),
+            __('Page %1$d of %2$d', 'kovalenko-admin-change-audit'),
             $pagination['currentPage'],
             $pagination['totalPages']
         )
@@ -205,24 +205,24 @@ function wp_activity_logger_render_dashboard(
     echo '<div class="wp-activity-logger-table-wrap">';
     echo '<table class="wp-activity-logger-table widefat striped">';
     echo '<thead><tr>';
-    echo '<th>' . esc_html__('ID', 'dk-user-activity-logger') . '</th>';
-    echo '<th>' . esc_html__('User', 'dk-user-activity-logger') . '</th>';
-    echo '<th>' . esc_html__('Activity', 'dk-user-activity-logger') . '</th>';
-    echo '<th>' . esc_html__('IP address', 'dk-user-activity-logger') . '</th>';
+    echo '<th>' . esc_html__('ID', 'kovalenko-admin-change-audit') . '</th>';
+    echo '<th>' . esc_html__('User', 'kovalenko-admin-change-audit') . '</th>';
+    echo '<th>' . esc_html__('Activity', 'kovalenko-admin-change-audit') . '</th>';
+    echo '<th>' . esc_html__('IP address', 'kovalenko-admin-change-audit') . '</th>';
     echo '<th>' . esc_html(sprintf(
         /* translators: %s: timezone identifier */
-        __('Timestamp (%s)', 'dk-user-activity-logger'),
-        wp_activity_logger_timezone_name()
+        __('Timestamp (%s)', 'kovalenko-admin-change-audit'),
+        kovalenko_admin_change_audit_timezone_name()
     )) . '</th>';
     echo '</tr></thead>';
     echo '<tbody data-log-rows>';
 
     foreach ($payload['items'] as $item) {
-        wp_activity_logger_render_table_row($item);
+        kovalenko_admin_change_audit_render_table_row($item);
     }
 
     if ($payload['items'] === []) {
-        echo '<tr data-empty-state><td colspan="5">' . esc_html__('No matching logs found.', 'dk-user-activity-logger') . '</td></tr>';
+        echo '<tr data-empty-state><td colspan="5">' . esc_html__('No matching logs found.', 'kovalenko-admin-change-audit') . '</td></tr>';
     }
 
     echo '</tbody>';
@@ -230,17 +230,17 @@ function wp_activity_logger_render_dashboard(
     echo '</div>';
 
     echo '<div class="wp-activity-logger-pagination">';
-    echo '<button type="button" class="button" data-page-direction="prev">' . esc_html__('Previous', 'dk-user-activity-logger') . '</button>';
+    echo '<button type="button" class="button" data-page-direction="prev">' . esc_html__('Previous', 'kovalenko-admin-change-audit') . '</button>';
     echo '<span class="wp-activity-logger-pagination-summary" data-pagination-summary>';
     echo esc_html(
         sprintf(
             /* translators: %1$d: total number of logs */
-            __('Showing %1$d logs', 'dk-user-activity-logger'),
+            __('Showing %1$d logs', 'kovalenko-admin-change-audit'),
             $pagination['totalLogs']
         )
     );
     echo '</span>';
-    echo '<button type="button" class="button" data-page-direction="next">' . esc_html__('Next', 'dk-user-activity-logger') . '</button>';
+    echo '<button type="button" class="button" data-page-direction="next">' . esc_html__('Next', 'kovalenko-admin-change-audit') . '</button>';
     echo '</div>';
     echo '</section>';
 
@@ -248,69 +248,69 @@ function wp_activity_logger_render_dashboard(
     echo '</div>';
 }
 
-function wp_activity_logger_render_security_panel(string $page_url, string $security_saved, string $security_error): void
+function kovalenko_admin_change_audit_render_security_panel(string $page_url, string $security_saved, string $security_error): void
 {
     echo '<section class="wp-activity-logger-security-card">';
     echo '<div class="wp-activity-logger-security-copy">';
-    echo '<p class="wp-activity-logger-eyebrow">' . esc_html__('Protection', 'dk-user-activity-logger') . '</p>';
-    echo '<h3>' . esc_html__('Hidden screen access', 'dk-user-activity-logger') . '</h3>';
-    echo '<p>' . esc_html__('Only the plugin owner account can open this screen. You can add a second password here when you want an extra lock before the logs are shown.', 'dk-user-activity-logger') . '</p>';
-    echo '<p><strong>' . esc_html__('Private URL:', 'dk-user-activity-logger') . '</strong> <a href="' . esc_url($page_url) . '">' . esc_html($page_url) . '</a></p>';
+    echo '<p class="wp-activity-logger-eyebrow">' . esc_html__('Protection', 'kovalenko-admin-change-audit') . '</p>';
+    echo '<h3>' . esc_html__('Hidden screen access', 'kovalenko-admin-change-audit') . '</h3>';
+    echo '<p>' . esc_html__('Only the plugin owner account can open this screen. You can add a second password here when you want an extra lock before the logs are shown.', 'kovalenko-admin-change-audit') . '</p>';
+    echo '<p><strong>' . esc_html__('Private URL:', 'kovalenko-admin-change-audit') . '</strong> <a href="' . esc_url($page_url) . '">' . esc_html($page_url) . '</a></p>';
 
     if ($security_saved === 'updated') {
-        echo '<div class="notice notice-success inline"><p>' . esc_html__('The access password was updated.', 'dk-user-activity-logger') . '</p></div>';
+        echo '<div class="notice notice-success inline"><p>' . esc_html__('The access password was updated.', 'kovalenko-admin-change-audit') . '</p></div>';
     } elseif ($security_saved === 'removed') {
-        echo '<div class="notice notice-success inline"><p>' . esc_html__('The access password was removed. Hidden owner-only access is still active.', 'dk-user-activity-logger') . '</p></div>';
+        echo '<div class="notice notice-success inline"><p>' . esc_html__('The access password was removed. Hidden owner-only access is still active.', 'kovalenko-admin-change-audit') . '</p></div>';
     } elseif ($security_error === 'mismatch') {
-        echo '<div class="notice notice-error inline"><p>' . esc_html__('Password and confirmation must match.', 'dk-user-activity-logger') . '</p></div>';
+        echo '<div class="notice notice-error inline"><p>' . esc_html__('Password and confirmation must match.', 'kovalenko-admin-change-audit') . '</p></div>';
     }
 
-    $password_status = wp_activity_logger()->has_saved_password()
-        ? __('Saved password active', 'dk-user-activity-logger')
-        : __('No saved password yet', 'dk-user-activity-logger');
+    $password_status = kovalenko_admin_change_audit()->has_saved_password()
+        ? __('Saved password active', 'kovalenko-admin-change-audit')
+        : __('No saved password yet', 'kovalenko-admin-change-audit');
 
     echo '<p class="wp-activity-logger-password-status">' . esc_html($password_status) . '</p>';
     echo '</div>';
 
     echo '<form method="post" action="' . esc_url($page_url) . '" class="wp-activity-logger-security-form">';
-    wp_nonce_field('wp_activity_logger_save_security');
-    echo '<input type="hidden" name="wp_activity_logger_save_security" value="1">';
-    echo '<label for="wpal-new-password">' . esc_html__('New access password', 'dk-user-activity-logger') . '</label>';
-    echo '<input id="wpal-new-password" type="password" name="wp_activity_logger_new_password" class="regular-text" autocomplete="new-password">';
-    echo '<label for="wpal-confirm-password">' . esc_html__('Confirm password', 'dk-user-activity-logger') . '</label>';
-    echo '<input id="wpal-confirm-password" type="password" name="wp_activity_logger_confirm_password" class="regular-text" autocomplete="new-password">';
+    wp_nonce_field('kovalenko_admin_change_audit_save_security');
+    echo '<input type="hidden" name="kovalenko_admin_change_audit_save_security" value="1">';
+    echo '<label for="wpal-new-password">' . esc_html__('New access password', 'kovalenko-admin-change-audit') . '</label>';
+    echo '<input id="wpal-new-password" type="password" name="kovalenko_admin_change_audit_new_password" class="regular-text" autocomplete="new-password">';
+    echo '<label for="wpal-confirm-password">' . esc_html__('Confirm password', 'kovalenko-admin-change-audit') . '</label>';
+    echo '<input id="wpal-confirm-password" type="password" name="kovalenko_admin_change_audit_confirm_password" class="regular-text" autocomplete="new-password">';
     echo '<div class="wp-activity-logger-security-actions">';
-    echo '<button type="submit" class="button button-primary">' . esc_html__('Save password', 'dk-user-activity-logger') . '</button>';
-    echo '<button type="submit" class="button button-secondary" name="wp_activity_logger_remove_password" value="1">' . esc_html__('Remove password', 'dk-user-activity-logger') . '</button>';
+    echo '<button type="submit" class="button button-primary">' . esc_html__('Save password', 'kovalenko-admin-change-audit') . '</button>';
+    echo '<button type="submit" class="button button-secondary" name="kovalenko_admin_change_audit_remove_password" value="1">' . esc_html__('Remove password', 'kovalenko-admin-change-audit') . '</button>';
     echo '</div>';
     echo '</form>';
     echo '</section>';
 }
 
-function wp_activity_logger_render_timezone_panel(string $page_url, string $timezone_saved, string $timezone_error): void
+function kovalenko_admin_change_audit_render_timezone_panel(string $page_url, string $timezone_saved, string $timezone_error): void
 {
-    $timezone_name = wp_activity_logger_timezone_name();
+    $timezone_name = kovalenko_admin_change_audit_timezone_name();
 
     echo '<section class="wp-activity-logger-security-card">';
     echo '<div class="wp-activity-logger-security-copy">';
-    echo '<p class="wp-activity-logger-eyebrow">' . esc_html__('Timezone', 'dk-user-activity-logger') . '</p>';
-    echo '<h3>' . esc_html__('Viewer and schedule timezone', 'dk-user-activity-logger') . '</h3>';
-    echo '<p>' . esc_html__('Choose which timezone the log timestamps, date filters, and nightly maintenance schedule should use. The default is America/Edmonton.', 'dk-user-activity-logger') . '</p>';
-    echo '<p><strong>' . esc_html__('Current timezone:', 'dk-user-activity-logger') . '</strong> ' . esc_html($timezone_name) . '</p>';
+    echo '<p class="wp-activity-logger-eyebrow">' . esc_html__('Timezone', 'kovalenko-admin-change-audit') . '</p>';
+    echo '<h3>' . esc_html__('Viewer and schedule timezone', 'kovalenko-admin-change-audit') . '</h3>';
+    echo '<p>' . esc_html__('Choose which timezone the log timestamps, date filters, and nightly maintenance schedule should use. The default is America/Edmonton.', 'kovalenko-admin-change-audit') . '</p>';
+    echo '<p><strong>' . esc_html__('Current timezone:', 'kovalenko-admin-change-audit') . '</strong> ' . esc_html($timezone_name) . '</p>';
 
     if ($timezone_saved === 'updated') {
-        echo '<div class="notice notice-success inline"><p>' . esc_html__('Timezone settings were updated.', 'dk-user-activity-logger') . '</p></div>';
+        echo '<div class="notice notice-success inline"><p>' . esc_html__('Timezone settings were updated.', 'kovalenko-admin-change-audit') . '</p></div>';
     } elseif ($timezone_error === 'invalid') {
-        echo '<div class="notice notice-error inline"><p>' . esc_html__('Please choose a valid timezone.', 'dk-user-activity-logger') . '</p></div>';
+        echo '<div class="notice notice-error inline"><p>' . esc_html__('Please choose a valid timezone.', 'kovalenko-admin-change-audit') . '</p></div>';
     }
 
     echo '</div>';
 
     echo '<form method="post" action="' . esc_url($page_url) . '" class="wp-activity-logger-security-form">';
-    wp_nonce_field('wp_activity_logger_save_timezone');
-    echo '<input type="hidden" name="wp_activity_logger_save_timezone" value="1">';
-    echo '<label for="wpal-timezone">' . esc_html__('Timezone', 'dk-user-activity-logger') . '</label>';
-    echo '<select id="wpal-timezone" name="wp_activity_logger_timezone" class="regular-text">';
+    wp_nonce_field('kovalenko_admin_change_audit_save_timezone');
+    echo '<input type="hidden" name="kovalenko_admin_change_audit_save_timezone" value="1">';
+    echo '<label for="wpal-timezone">' . esc_html__('Timezone', 'kovalenko-admin-change-audit') . '</label>';
+    echo '<select id="wpal-timezone" name="kovalenko_admin_change_audit_timezone" class="regular-text">';
 
     foreach (timezone_identifiers_list() as $identifier) {
         echo '<option value="' . esc_attr($identifier) . '"' . selected($timezone_name, $identifier, false) . '>' . esc_html($identifier) . '</option>';
@@ -318,13 +318,13 @@ function wp_activity_logger_render_timezone_panel(string $page_url, string $time
 
     echo '</select>';
     echo '<div class="wp-activity-logger-security-actions">';
-    echo '<button type="submit" class="button button-primary">' . esc_html__('Save timezone', 'dk-user-activity-logger') . '</button>';
+    echo '<button type="submit" class="button button-primary">' . esc_html__('Save timezone', 'kovalenko-admin-change-audit') . '</button>';
     echo '</div>';
     echo '</form>';
     echo '</section>';
 }
 
-function wp_activity_logger_render_stat_card(string $label, string $value, string $metric_key): void
+function kovalenko_admin_change_audit_render_stat_card(string $label, string $value, string $metric_key): void
 {
     echo '<article class="wp-activity-logger-stat-card">';
     echo '<span class="wp-activity-logger-stat-label">' . esc_html($label) . '</span>';
@@ -332,18 +332,74 @@ function wp_activity_logger_render_stat_card(string $label, string $value, strin
     echo '</article>';
 }
 
-function wp_activity_logger_render_select_option(string $value, string $current_value, string $label): void
+function kovalenko_admin_change_audit_render_select_option(string $value, string $current_value, string $label): void
 {
     echo '<option value="' . esc_attr($value) . '"' . selected($current_value, $value, false) . '>' . esc_html($label) . '</option>';
 }
 
-function wp_activity_logger_render_table_row(array $item): void
+function kovalenko_admin_change_audit_render_table_row(array $item): void
 {
     echo '<tr data-log-id="' . esc_attr((string) $item['id']) . '">';
     echo '<td>' . esc_html((string) $item['id']) . '</td>';
     echo '<td><span class="wp-activity-logger-user-pill">' . esc_html((string) $item['user']) . '</span></td>';
-    echo '<td>' . esc_html((string) $item['activity']) . '</td>';
+    echo '<td class="wp-activity-logger-activity-cell">';
+    echo '<div class="wp-activity-logger-activity-text">' . esc_html((string) $item['activity']) . '</div>';
+    kovalenko_admin_change_audit_render_activity_details((int) $item['id'], is_array($item['details'] ?? null) ? $item['details'] : []);
+    echo '</td>';
     echo '<td><code>' . esc_html((string) $item['ipAddress']) . '</code></td>';
     echo '<td>' . esc_html((string) $item['createdAt']) . '</td>';
     echo '</tr>';
+}
+
+/**
+ * @param list<array{label: string, before: string, after: string}> $details
+ */
+function kovalenko_admin_change_audit_render_activity_details(int $log_id, array $details): void
+{
+    if ($details === []) {
+        return;
+    }
+
+    echo '<details class="wp-activity-logger-details">';
+    echo '<summary>' . esc_html(
+        sprintf(
+            /* translators: %d: number of changed fields */
+            __('View changes (%d)', 'kovalenko-admin-change-audit'),
+            count($details)
+        )
+    ) . '</summary>';
+    echo '<div class="wp-activity-logger-detail-list" aria-label="' . esc_attr(
+        sprintf(
+            /* translators: %d: log entry ID */
+            __('Detailed changes for log %d', 'kovalenko-admin-change-audit'),
+            $log_id
+        )
+    ) . '">';
+
+    foreach ($details as $detail) {
+        if (! is_array($detail)) {
+            continue;
+        }
+
+        $label = isset($detail['label']) ? (string) $detail['label'] : '';
+        $before = isset($detail['before']) ? (string) $detail['before'] : '';
+        $after = isset($detail['after']) ? (string) $detail['after'] : '';
+
+        echo '<section class="wp-activity-logger-detail-card">';
+        echo '<h4>' . esc_html($label) . '</h4>';
+        echo '<div class="wp-activity-logger-detail-grid">';
+        echo '<div class="wp-activity-logger-detail-column">';
+        echo '<span class="wp-activity-logger-detail-label">' . esc_html__('Before', 'kovalenko-admin-change-audit') . '</span>';
+        echo '<div class="wp-activity-logger-detail-value">' . esc_html($before !== '' ? $before : __('Empty value', 'kovalenko-admin-change-audit')) . '</div>';
+        echo '</div>';
+        echo '<div class="wp-activity-logger-detail-column">';
+        echo '<span class="wp-activity-logger-detail-label">' . esc_html__('After', 'kovalenko-admin-change-audit') . '</span>';
+        echo '<div class="wp-activity-logger-detail-value">' . esc_html($after !== '' ? $after : __('Empty value', 'kovalenko-admin-change-audit')) . '</div>';
+        echo '</div>';
+        echo '</div>';
+        echo '</section>';
+    }
+
+    echo '</div>';
+    echo '</details>';
 }

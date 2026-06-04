@@ -2,7 +2,11 @@
 
 declare(strict_types=1);
 
-final class WPActivityLoggerEventLogger
+if (! defined('ABSPATH')) {
+    exit;
+}
+
+final class Kovalenko_Admin_Change_Audit_Event_Logger
 {
     public function register_hooks(): void
     {
@@ -56,9 +60,10 @@ final class WPActivityLoggerEventLogger
                 $actor_text,
                 $post_id,
                 get_permalink($post_id) ?: home_url(sprintf('/?p=%d', $post_id)),
-                $changes
+                $changes['summary']
             ),
-            $actor['id']
+            $actor['id'],
+            $changes['details']
         );
     }
 
@@ -182,9 +187,12 @@ final class WPActivityLoggerEventLogger
         );
     }
 
-    private function record_activity(string $message, ?int $user_id = null): void
+    /**
+     * @param list<array{label: string, before: string, after: string}>|null $details
+     */
+    private function record_activity(string $message, ?int $user_id = null, ?array $details = null): void
     {
-        wp_activity_logger_record_activity($message, $user_id);
+        kovalenko_admin_change_audit_record_activity($message, $user_id, $details);
     }
 
     private function get_current_actor(): array
@@ -228,7 +236,7 @@ final class WPActivityLoggerEventLogger
 
     private function get_system_actor_label(): string
     {
-        return __('System', 'dk-user-activity-logger');
+        return __('System', 'kovalenko-admin-change-audit');
     }
 
     private function format_actor_text(string $actor_label, ?int $user_id): string
@@ -240,66 +248,182 @@ final class WPActivityLoggerEventLogger
         return sprintf("User '%s'", $actor_label);
     }
 
-    private function detect_post_changes(object $post_before, object $post_after): string
+    /**
+     * @return array{
+     *     summary: string,
+     *     details: list<array{label: string, before: string, after: string}>
+     * }
+     */
+    private function detect_post_changes(object $post_before, object $post_after): array
     {
-        $changes = [];
+        $summary_parts = [];
+        $details = [];
 
         if ($post_before->post_title !== $post_after->post_title) {
-            $changes[] = sprintf(
+            $summary_parts[] = sprintf(
                 "title changed from '%s' to '%s'",
                 $post_before->post_title,
                 $post_after->post_title
             );
+            $details[] = $this->build_change_detail(
+                label: __('Title', 'kovalenko-admin-change-audit'),
+                before: (string) $post_before->post_title,
+                after: (string) $post_after->post_title
+            );
         }
 
         if ($post_before->post_content !== $post_after->post_content) {
-            $changes[] = 'content updated';
+            $summary_parts[] = 'content updated';
+            $details[] = $this->build_change_detail(
+                label: __('Content', 'kovalenko-admin-change-audit'),
+                before: $this->prepare_post_content_value((string) $post_before->post_content),
+                after: $this->prepare_post_content_value((string) $post_after->post_content)
+            );
         }
 
         if (($post_before->post_excerpt ?? '') !== ($post_after->post_excerpt ?? '')) {
-            $changes[] = 'excerpt updated';
+            $summary_parts[] = 'excerpt updated';
+            $details[] = $this->build_change_detail(
+                label: __('Excerpt', 'kovalenko-admin-change-audit'),
+                before: $this->prepare_post_content_value((string) ($post_before->post_excerpt ?? '')),
+                after: $this->prepare_post_content_value((string) ($post_after->post_excerpt ?? ''))
+            );
         }
 
         if (($post_before->post_status ?? '') !== ($post_after->post_status ?? '')) {
-            $changes[] = sprintf(
+            $summary_parts[] = sprintf(
                 "status changed from '%s' to '%s'",
                 $post_before->post_status,
                 $post_after->post_status
             );
+            $details[] = $this->build_change_detail(
+                label: __('Status', 'kovalenko-admin-change-audit'),
+                before: (string) ($post_before->post_status ?? ''),
+                after: (string) ($post_after->post_status ?? '')
+            );
         }
 
         if (($post_before->post_name ?? '') !== ($post_after->post_name ?? '')) {
-            $changes[] = sprintf(
+            $summary_parts[] = sprintf(
                 "slug changed from '%s' to '%s'",
                 $post_before->post_name,
                 $post_after->post_name
             );
+            $details[] = $this->build_change_detail(
+                label: __('Slug', 'kovalenko-admin-change-audit'),
+                before: (string) ($post_before->post_name ?? ''),
+                after: (string) ($post_after->post_name ?? '')
+            );
         }
 
         if (($post_before->menu_order ?? 0) !== ($post_after->menu_order ?? 0)) {
-            $changes[] = 'menu order updated';
+            $summary_parts[] = 'menu order updated';
+            $details[] = $this->build_change_detail(
+                label: __('Menu order', 'kovalenko-admin-change-audit'),
+                before: (string) ($post_before->menu_order ?? 0),
+                after: (string) ($post_after->menu_order ?? 0)
+            );
         }
 
         if (($post_before->post_parent ?? 0) !== ($post_after->post_parent ?? 0)) {
-            $changes[] = 'parent updated';
+            $summary_parts[] = 'parent updated';
+            $details[] = $this->build_change_detail(
+                label: __('Parent', 'kovalenko-admin-change-audit'),
+                before: $this->resolve_post_parent_label((int) ($post_before->post_parent ?? 0)),
+                after: $this->resolve_post_parent_label((int) ($post_after->post_parent ?? 0))
+            );
         }
 
         if (($post_before->post_author ?? 0) !== ($post_after->post_author ?? 0)) {
-            $changes[] = 'author updated';
+            $summary_parts[] = 'author updated';
+            $details[] = $this->build_change_detail(
+                label: __('Author', 'kovalenko-admin-change-audit'),
+                before: $this->resolve_author_label((int) ($post_before->post_author ?? 0)),
+                after: $this->resolve_author_label((int) ($post_after->post_author ?? 0))
+            );
         }
 
         if (($post_before->comment_status ?? '') !== ($post_after->comment_status ?? '')) {
-            $changes[] = 'comment settings updated';
+            $summary_parts[] = 'comment settings updated';
+            $details[] = $this->build_change_detail(
+                label: __('Comments', 'kovalenko-admin-change-audit'),
+                before: (string) ($post_before->comment_status ?? ''),
+                after: (string) ($post_after->comment_status ?? '')
+            );
         }
 
         if (($post_before->ping_status ?? '') !== ($post_after->ping_status ?? '')) {
-            $changes[] = 'ping settings updated';
+            $summary_parts[] = 'ping settings updated';
+            $details[] = $this->build_change_detail(
+                label: __('Pings', 'kovalenko-admin-change-audit'),
+                before: (string) ($post_before->ping_status ?? ''),
+                after: (string) ($post_after->ping_status ?? '')
+            );
         }
 
-        if ($changes !== []) {
-            return implode(', ', $changes);
+        return [
+            'summary' => $summary_parts !== []
+                ? implode(', ', $summary_parts)
+                : 'post settings or metadata updated',
+            'details' => $details,
+        ];
+    }
+
+    /**
+     * @return array{label: string, before: string, after: string}
+     */
+    private function build_change_detail(string $label, string $before, string $after): array
+    {
+        return [
+            'label' => $label,
+            'before' => trim($before),
+            'after' => trim($after),
+        ];
+    }
+
+    private function prepare_post_content_value(string $value): string
+    {
+        $normalized = trim(str_replace(["\r\n", "\r"], "\n", $value));
+        $plain_text = trim(wp_strip_all_tags($normalized, false));
+
+        if ($plain_text !== '') {
+            $normalized = $plain_text;
         }
 
-        return 'post settings or metadata updated';
+        $collapsed = preg_replace("/\n{3,}/", "\n\n", $normalized);
+
+        return is_string($collapsed) ? trim($collapsed) : $normalized;
+    }
+
+    private function resolve_post_parent_label(int $post_id): string
+    {
+        if ($post_id <= 0) {
+            return '';
+        }
+
+        $post = get_post($post_id);
+
+        if (! $post instanceof \WP_Post) {
+            return (string) $post_id;
+        }
+
+        return $post->post_title !== ''
+            ? sprintf('%s (#%d)', $post->post_title, $post_id)
+            : sprintf('#%d', $post_id);
+    }
+
+    private function resolve_author_label(int $user_id): string
+    {
+        if ($user_id <= 0) {
+            return '';
+        }
+
+        $user = get_userdata($user_id);
+
+        if (! $user instanceof \WP_User) {
+            return (string) $user_id;
+        }
+
+        return $user->user_login;
     }
 }

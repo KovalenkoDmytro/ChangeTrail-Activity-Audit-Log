@@ -1,6 +1,6 @@
 <?php
 /**
- * Plugin Name: Kovalenko Admin Change Audit (Dev)
+ * Plugin Name: Kovalenko Admin Change Audit
  * Plugin URI: https://github.com/KovalenkoDmytro/wp_logs_plugin
  * Description: Records key site activity and provides a protected activity log screen for site owners.
  * Version: 2.8.0

@@ -105,7 +105,7 @@ function kovalenko_admin_change_audit_render_dashboard(
 {
     $metrics = $payload['metrics'];
     $pagination = $payload['pagination'];
-    $initial_payload = wp_json_encode($payload);
+    $initial_payload = wp_json_encode($payload, JSON_HEX_TAG | JSON_HEX_AMP | JSON_HEX_APOS | JSON_HEX_QUOT);
 
     echo '<div class="wp-activity-logger-app" data-page-url="' . esc_url($page_url) . '">';
 
@@ -244,7 +244,7 @@ function kovalenko_admin_change_audit_render_dashboard(
     echo '</div>';
     echo '</section>';
 
-    echo '<script type="application/json" id="wp-activity-logger-initial-state">' . esc_html($initial_payload ?: '{}') . '</script>';
+    echo '<script type="application/json" id="wp-activity-logger-initial-state">' . ($initial_payload ?: '{}') . '</script>';
     echo '</div>';
 }
 

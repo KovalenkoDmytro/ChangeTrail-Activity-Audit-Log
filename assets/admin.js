@@ -24,7 +24,14 @@
   };
 
   const initialStateNode = document.getElementById("wp-activity-logger-initial-state");
-  const initialState = initialStateNode?.textContent ? JSON.parse(initialStateNode.textContent) : null;
+  let initialState = null;
+  if (initialStateNode?.textContent) {
+    try {
+      initialState = JSON.parse(initialStateNode.textContent);
+    } catch (error) {
+      console.error("wp-activity-logger: failed to parse initial state", error);
+    }
+  }
 
   const state = {
     currentPage: initialState?.pagination?.currentPage ?? 1,

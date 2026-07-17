@@ -8,8 +8,8 @@ if (! defined('ABSPATH')) {
 
 final class Kovalenko_Admin_Change_Audit_Plugin
 {
-    public const VERSION = '2.7.0';
-    public const SCHEMA_VERSION = '2.7.0';
+    public const VERSION = '2.8.0';
+    public const SCHEMA_VERSION = '2.8.0';
     public const VIEW_CAPABILITY = 'manage_options';
     public const NIGHTLY_MAINTENANCE_HOOK = 'kovalenko_admin_change_audit_nightly_maintenance';
     public const LOG_RETENTION_DAYS = 30;

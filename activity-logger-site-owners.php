@@ -3,7 +3,7 @@
  * Plugin Name: Kovalenko Admin Change Audit (Dev)
  * Plugin URI: https://github.com/KovalenkoDmytro/wp_logs_plugin
  * Description: Records key site activity and provides a protected activity log screen for site owners.
- * Version: 2.7.0
+ * Version: 2.8.0
  * Author: Dmytro Kovalenko
  * Author URI: https://dmytro-kovalenko.ca
  * License: GPL v2 or later

@@ -244,6 +244,7 @@ function kovalenko_admin_change_audit_render_dashboard(
     echo '</div>';
     echo '</section>';
 
+    // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $initial_payload is wp_json_encode() output with JSON_HEX_TAG|JSON_HEX_AMP|JSON_HEX_APOS|JSON_HEX_QUOT, so it cannot close the script element or break out of it.
     echo '<script type="application/json" id="wp-activity-logger-initial-state">' . ($initial_payload ?: '{}') . '</script>';
     echo '</div>';
 }

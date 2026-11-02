@@ -24,6 +24,7 @@ final class Kovalenko_Admin_Change_Audit_Admin_Service
         add_action('admin_enqueue_scripts', [$this, 'enqueue_admin_assets']);
         add_action('admin_bar_menu', [$this, 'register_admin_bar_link'], 90);
         add_action('admin_notices', [$this, 'render_access_notice']);
+        add_action('admin_notices', [$this, 'render_legacy_plugin_notice']);
         add_action('wp_ajax_kovalenko_admin_change_audit_fetch_logs', [$this, 'handle_fetch_logs']);
 
         add_filter('plugin_row_meta', [$this, 'add_plugin_row_meta_link'], 10, 4);
@@ -32,8 +33,14 @@ final class Kovalenko_Admin_Change_Audit_Admin_Service
     public function setup_on_install(): void
     {
         $this->ensure_access_slug();
-        $this->persist_owner_user_id(get_current_user_id());
-        update_option(Kovalenko_Admin_Change_Audit_Plugin::OPTION_SHOW_ACCESS_NOTICE, 'yes', false);
+        // Keep the stored owner only while that account still exists and can open the screen.
+        if (! $this->has_valid_owner()) {
+            $this->persist_owner_user_id(get_current_user_id());
+        }
+        // Only a fresh install shows the notice; a stored 'yes'/'no' (dismissed or imported) is never overwritten.
+        if ((string) get_option(Kovalenko_Admin_Change_Audit_Plugin::OPTION_SHOW_ACCESS_NOTICE, '') === '') {
+            update_option(Kovalenko_Admin_Change_Audit_Plugin::OPTION_SHOW_ACCESS_NOTICE, 'yes', false);
+        }
         ($this->schedule_maintenance)();
     }
 
@@ -41,7 +48,7 @@ final class Kovalenko_Admin_Change_Audit_Admin_Service
     {
         $this->ensure_access_slug();
 
-        if ($this->get_owner_user_id() > 0 || ! current_user_can(Kovalenko_Admin_Change_Audit_Plugin::VIEW_CAPABILITY)) {
+        if ($this->has_valid_owner() || ! current_user_can(Kovalenko_Admin_Change_Audit_Plugin::VIEW_CAPABILITY)) {
             return;
         }
 
@@ -213,6 +220,61 @@ final class Kovalenko_Admin_Change_Audit_Admin_Service
         echo '</div>';
     }
 
+    public function render_legacy_plugin_notice(): void
+    {
+        if (
+            ! Kovalenko_Admin_Change_Audit_Plugin::is_legacy_plugin_active()
+            || ! $this->is_owner_viewer()
+            || ! $this->should_render_access_notice()
+        ) {
+            return;
+        }
+
+        echo '<div class="notice notice-warning">';
+        echo '<p><strong>' . esc_html__('The earlier WP Activity Logger plugin is still active.', 'kovalenko-admin-change-audit') . '</strong></p>';
+        echo '<p>' . esc_html__('Both plugins write to the same activity log, so every event is currently recorded twice. You can safely deactivate the old plugin.', 'kovalenko-admin-change-audit') . '</p>';
+        $this->render_legacy_import_summary();
+
+        $deactivate_url = $this->get_legacy_plugin_deactivate_url();
+        if ($deactivate_url !== '') {
+            echo '<p><a class="button button-primary" href="' . esc_url($deactivate_url) . '">' . esc_html__('Deactivate the old plugin', 'kovalenko-admin-change-audit') . '</a></p>';
+        } else {
+            echo '<p><a href="' . esc_url(admin_url('plugins.php')) . '">' . esc_html__('Open the Plugins screen to deactivate it.', 'kovalenko-admin-change-audit') . '</a></p>';
+        }
+
+        echo '</div>';
+    }
+
+    private function render_legacy_import_summary(): void
+    {
+        $summary = Kovalenko_Admin_Change_Audit_Plugin::get_legacy_import_summary();
+        $labels = [
+            'slug' => __('access URL', 'kovalenko-admin-change-audit'),
+            'owner' => __('owner account', 'kovalenko-admin-change-audit'),
+            'hash' => __('extra password', 'kovalenko-admin-change-audit'),
+            'notice' => __('notice preference', 'kovalenko-admin-change-audit'),
+            'timezone' => __('timezone', 'kovalenko-admin-change-audit'),
+        ];
+
+        $names = [];
+        foreach ($labels as $key => $label) {
+            if (in_array($key, $summary, true)) {
+                $names[] = $label;
+            }
+        }
+
+        if ($names !== []) {
+            /* translators: %s: comma-separated list of imported settings. */
+            echo '<p>' . esc_html(sprintf(__('Imported from the old plugin: %s.', 'kovalenko-admin-change-audit'), implode(', ', $names))) . '</p>';
+        } else {
+            echo '<p>' . esc_html__('No settings were imported from the old plugin.', 'kovalenko-admin-change-audit') . '</p>';
+        }
+
+        if (in_array('slug_skipped_legacy_active', $summary, true)) {
+            echo '<p>' . esc_html__('The old access URL was not copied because the old plugin was active and uses it. After you deactivate the old plugin, your log address is the new one:', 'kovalenko-admin-change-audit') . ' <a href="' . esc_url($this->get_admin_page_url()) . '">' . esc_html($this->get_admin_page_url()) . '</a></p>';
+        }
+    }
+
     public function handle_fetch_logs(): void
     {
         if (! $this->is_owner_viewer()) {
@@ -368,6 +430,7 @@ final class Kovalenko_Admin_Change_Audit_Admin_Service
         update_option(Kovalenko_Admin_Change_Audit_Plugin::OPTION_TIMEZONE, $timezone_name, false);
         wp_clear_scheduled_hook(Kovalenko_Admin_Change_Audit_Plugin::NIGHTLY_MAINTENANCE_HOOK);
         wp_clear_scheduled_hook('kovalenko_admin_change_audit_nightly_update');
+        Kovalenko_Admin_Change_Audit_Plugin::clear_legacy_cron_hooks();
         ($this->schedule_maintenance)();
 
         wp_safe_redirect(
@@ -415,6 +478,16 @@ final class Kovalenko_Admin_Change_Audit_Admin_Service
         return (int) get_option(Kovalenko_Admin_Change_Audit_Plugin::OPTION_OWNER_USER_ID, 0);
     }
 
+    private function has_valid_owner(): bool
+    {
+        $owner_user_id = $this->get_owner_user_id();
+
+        // user_can() is false for users that no longer exist.
+        return $owner_user_id > 0
+            && get_userdata($owner_user_id) instanceof \WP_User
+            && user_can($owner_user_id, Kovalenko_Admin_Change_Audit_Plugin::VIEW_CAPABILITY);
+    }
+
     private function persist_owner_user_id(int $user_id): void
     {
         if ($user_id <= 0) {
@@ -433,6 +506,8 @@ final class Kovalenko_Admin_Change_Audit_Admin_Service
 
         $slug = sprintf('kovalenko-activity-logs-%s', strtolower(wp_generate_password(10, false, false)));
         update_option(Kovalenko_Admin_Change_Audit_Plugin::OPTION_ACCESS_SLUG, $slug, false);
+        // Reached only when a brand new slug was generated (existing or imported slugs return early above),
+        // so the owner has to be told the new URL.
         update_option(Kovalenko_Admin_Change_Audit_Plugin::OPTION_SHOW_ACCESS_NOTICE, 'yes', false);
 
         return $slug;
@@ -452,11 +527,49 @@ final class Kovalenko_Admin_Change_Audit_Admin_Service
         return $screen->base === 'plugins' || $screen->id === sprintf('tools_page_%s', $this->get_access_slug());
     }
 
+    private function get_legacy_plugin_deactivate_url(): string
+    {
+        if (! function_exists('wp_activity_logger') || ! function_exists('is_plugin_active')) {
+            return '';
+        }
+
+        $file = (new \ReflectionFunction('wp_activity_logger'))->getFileName();
+        if (! is_string($file) || $file === '') {
+            return '';
+        }
+
+        $basename = plugin_basename($file);
+        $own_basename = plugin_basename($this->plugin_file);
+        $own_folder = dirname($own_basename);
+
+        // Only offer the one-click button for a real, active plugin whose main file looks like the earlier
+        // plugin and that lives outside this plugin's own folder. Never this plugin itself.
+        $looks_legacy = str_ends_with($basename, 'wp-logs-viewer.php')
+            || str_ends_with($basename, 'activity-logger-site-owners.php');
+        if (
+            $basename === $own_basename
+            || dirname($basename) === $own_folder
+            || ! $looks_legacy
+            || ! is_plugin_active($basename)
+        ) {
+            return '';
+        }
+
+        return wp_nonce_url(
+            self_admin_url('plugins.php?action=deactivate&plugin=' . rawurlencode($basename)),
+            'deactivate-plugin_' . $basename
+        );
+    }
+
     private function get_access_password(): string
     {
-        $password = defined(Kovalenko_Admin_Change_Audit_Plugin::ACCESS_PASSWORD_CONST)
-            ? trim((string) constant(Kovalenko_Admin_Change_Audit_Plugin::ACCESS_PASSWORD_CONST))
-            : '';
+        $password = '';
+        if (defined(Kovalenko_Admin_Change_Audit_Plugin::ACCESS_PASSWORD_CONST)) {
+            $password = trim((string) constant(Kovalenko_Admin_Change_Audit_Plugin::ACCESS_PASSWORD_CONST));
+        } elseif (defined(Kovalenko_Admin_Change_Audit_Plugin::LEGACY_ACCESS_PASSWORD_CONST)) {
+            // Read-only fallback for sites that configured the constant for the earlier plugin.
+            $password = trim((string) constant(Kovalenko_Admin_Change_Audit_Plugin::LEGACY_ACCESS_PASSWORD_CONST));
+        }
 
         return (string) apply_filters('kovalenko_admin_change_audit_access_password', $password);
     }

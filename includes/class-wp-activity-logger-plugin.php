@@ -8,8 +8,8 @@ if (! defined('ABSPATH')) {
 
 final class Kovalenko_Admin_Change_Audit_Plugin
 {
-    public const VERSION = '2.8.0';
-    public const SCHEMA_VERSION = '2.8.0';
+    public const VERSION = '2.8.1';
+    public const SCHEMA_VERSION = '2.8.1';
     public const VIEW_CAPABILITY = 'manage_options';
     public const NIGHTLY_MAINTENANCE_HOOK = 'kovalenko_admin_change_audit_nightly_maintenance';
     public const LOG_RETENTION_DAYS = 30;
@@ -21,6 +21,21 @@ final class Kovalenko_Admin_Change_Audit_Plugin
     public const OPTION_TIMEZONE = 'kovalenko_admin_change_audit_timezone';
     public const USER_META_UNLOCKED_UNTIL = 'kovalenko_admin_change_audit_unlocked_until';
     public const ACCESS_PASSWORD_CONST = 'KOVALENKO_ADMIN_CHANGE_AUDIT_ACCESS_PASSWORD';
+    public const OPTION_LEGACY_MIGRATED = 'kovalenko_admin_change_audit_legacy_migrated';
+
+    // Keys written by the earlier "WP Activity Logger" plugin (<= 2.6.2). They are only read once to import
+    // settings and to clean up leftovers; this plugin never writes to the legacy options.
+    public const LEGACY_OPTION_ACCESS_SLUG = 'wp_activity_logger_access_slug';
+    public const LEGACY_OPTION_OWNER_USER_ID = 'wp_activity_logger_owner_user_id';
+    public const LEGACY_OPTION_SHOW_ACCESS_NOTICE = 'wp_activity_logger_show_access_notice';
+    public const LEGACY_OPTION_ACCESS_PASSWORD_HASH = 'wp_activity_logger_access_password_hash';
+    public const LEGACY_OPTION_TIMEZONE = 'wp_activity_logger_timezone';
+    public const LEGACY_USER_META_UNLOCKED_UNTIL = 'wp_activity_logger_unlocked_until';
+    public const LEGACY_ACCESS_PASSWORD_CONST = 'WP_ACTIVITY_LOGGER_ACCESS_PASSWORD';
+    public const LEGACY_CRON_HOOKS = [
+        'wp_activity_logger_nightly_update',
+        'wp_activity_logger_nightly_maintenance',
+    ];
 
     private readonly Kovalenko_Admin_Change_Audit_Admin_Service $admin_service;
     private readonly Kovalenko_Admin_Change_Audit_Event_Logger $event_logger;
@@ -56,6 +71,9 @@ final class Kovalenko_Admin_Change_Audit_Plugin
 
     public function maybe_upgrade_schema(): void
     {
+        // Cheap in-memory check of the cached cron option; no writes unless a legacy hook is still scheduled.
+        self::clear_legacy_cron_hooks();
+
         if (get_option(self::OPTION_SCHEMA_VERSION, '') === self::SCHEMA_VERSION) {
             return;
         }
@@ -126,10 +144,133 @@ final class Kovalenko_Admin_Change_Audit_Plugin
         return $this->admin_service->get_timezone_name();
     }
 
+    public static function is_legacy_plugin_active(): bool
+    {
+        return function_exists('wp_activity_logger')
+            || class_exists('WPActivityLoggerPlugin', false);
+    }
+
+    /**
+     * What the one-time legacy import actually did. Possible entries: slug, owner, hash, notice, timezone,
+     * slug_skipped_legacy_active.
+     *
+     * @return list<string>
+     */
+    public static function get_legacy_import_summary(): array
+    {
+        $summary = get_option(self::OPTION_LEGACY_MIGRATED, []);
+
+        return is_array($summary) ? array_values(array_filter($summary, 'is_string')) : [];
+    }
+
+    /**
+     * Removes cron events left behind by the earlier plugin, but only once that plugin is no longer running
+     * (otherwise it would lose its own schedule).
+     */
+    public static function clear_legacy_cron_hooks(): void
+    {
+        if (self::is_legacy_plugin_active()) {
+            return;
+        }
+
+        foreach (self::LEGACY_CRON_HOOKS as $hook) {
+            if (wp_next_scheduled($hook) !== false) {
+                wp_clear_scheduled_hook($hook);
+            }
+        }
+    }
+
     private function upgrade_schema(): void
     {
         kovalenko_admin_change_audit_install();
+        $this->migrate_legacy_settings();
         update_option(self::OPTION_SCHEMA_VERSION, self::SCHEMA_VERSION, false);
+    }
+
+    /**
+     * One-time, idempotent copy of settings from the earlier plugin. New values always win; legacy options
+     * are left untouched.
+     */
+    private function migrate_legacy_settings(): void
+    {
+        if (get_option(self::OPTION_LEGACY_MIGRATED, '') !== '') {
+            return;
+        }
+
+        $imported = [];
+
+        // While the old plugin is still active it registers the same Tools submenu slug, so a copied slug would
+        // collide. In that case this plugin keeps its own generated slug.
+        $legacy_slug = sanitize_key((string) get_option(self::LEGACY_OPTION_ACCESS_SLUG, ''));
+        if ($legacy_slug !== '' && (string) get_option(self::OPTION_ACCESS_SLUG, '') === '') {
+            if (self::is_legacy_plugin_active()) {
+                $imported[] = 'slug_skipped_legacy_active';
+            } else {
+                update_option(self::OPTION_ACCESS_SLUG, $legacy_slug, false);
+                $imported[] = 'slug';
+            }
+        }
+
+        $legacy_owner = (int) get_option(self::LEGACY_OPTION_OWNER_USER_ID, 0);
+        $current_owner = (int) get_option(self::OPTION_OWNER_USER_ID, 0);
+        if (
+            $legacy_owner > 0
+            && $current_owner <= 0
+            && user_can($legacy_owner, self::VIEW_CAPABILITY)
+        ) {
+            update_option(self::OPTION_OWNER_USER_ID, $legacy_owner, false);
+            $current_owner = $legacy_owner;
+            $imported[] = 'owner';
+        }
+
+        // The old password was set by the legacy owner; importing it for anybody else could lock out the
+        // effective owner of this plugin.
+        $legacy_hash = get_option(self::LEGACY_OPTION_ACCESS_PASSWORD_HASH, '');
+        if (
+            is_string($legacy_hash)
+            && self::is_valid_password_hash($legacy_hash)
+            && $legacy_owner > 0
+            && $legacy_owner === $current_owner
+            && (string) get_option(self::OPTION_ACCESS_PASSWORD_HASH, '') === ''
+        ) {
+            update_option(self::OPTION_ACCESS_PASSWORD_HASH, $legacy_hash, false);
+            $imported[] = 'hash';
+        }
+
+        if (in_array('slug', $imported, true)) {
+            $legacy_notice = get_option(self::LEGACY_OPTION_SHOW_ACCESS_NOTICE, '');
+            if (in_array($legacy_notice, ['yes', 'no'], true)) {
+                update_option(self::OPTION_SHOW_ACCESS_NOTICE, $legacy_notice, false);
+                $imported[] = 'notice';
+            }
+        }
+
+        $legacy_timezone = get_option(self::LEGACY_OPTION_TIMEZONE, '');
+        if (
+            is_string($legacy_timezone)
+            && kovalenko_admin_change_audit_is_valid_timezone($legacy_timezone)
+            && (string) get_option(self::OPTION_TIMEZONE, '') === ''
+        ) {
+            update_option(self::OPTION_TIMEZONE, $legacy_timezone, false);
+            $imported[] = 'timezone';
+        }
+
+        // Ephemeral unlock sessions of the old plugin are never migrated.
+        delete_metadata('user', 0, self::LEGACY_USER_META_UNLOCKED_UNTIL, '', true);
+
+        // Non-empty value (even an empty list) marks the migration as done.
+        update_option(self::OPTION_LEGACY_MIGRATED, $imported, false);
+    }
+
+    private static function is_valid_password_hash(string $hash): bool
+    {
+        foreach (['$P$', '$wp$', '$2y$', '$argon2'] as $prefix) {
+            if (str_starts_with($hash, $prefix)) {
+                return true;
+            }
+        }
+
+        return false;
     }
 
     private function get_log_retention_days(): int

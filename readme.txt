@@ -2,9 +2,9 @@
 Contributors: dmytrokovalenko
 Tags: activity log, audit log, security, logging, monitoring
 Requires at least: 6.2
-Tested up to: 7.0
+Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 2.8.0
+Stable tag: 2.8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
@@ -56,12 +56,28 @@ The plugin runs a daily cleanup task that removes log rows older than the config
 
 Yes. The plugin defaults to `America/Edmonton`, but the owner can choose a different timezone for displayed timestamps, date filters, and the nightly maintenance schedule.
 
+= I used the earlier "WP Activity Logger" plugin. Do I keep my settings and logs? =
+
+Yes. Existing log rows are kept because both plugins use the same log table, and on the first load after updating this plugin imports the old access URL, owner, extra password, and timezone settings (only where this plugin has no value yet). The old plugin's options are left in place. The old password is only imported when the old owner is also the owner of this plugin. If the old plugin is still active during the first load, its access URL is not copied (both would use the same menu address); after deactivating the old plugin your log address is the new one shown in the access notice. Deactivate the old plugin to avoid recording every event twice. A password set through the old plugin's `wp_activity_logger_access_password` filter is not carried over; set it again in this plugin's security form or with KOVALENKO_ADMIN_CHANGE_AUDIT_ACCESS_PASSWORD.
+
+= I lost access to the log viewer. How do I recover? =
+
+If the stored owner account was deleted or lost administrator access, the next administrator who opens the dashboard becomes the owner automatically. To reset it manually with WP-CLI, run `wp option delete kovalenko_admin_change_audit_owner_user_id`.
+
 == Screenshots ==
 
 1. Owner-only activity log viewer with filters, metrics, and live refresh.
 2. Security panel for protecting the hidden viewer with an extra password.
 
 == Changelog ==
+
+= 2.8.1 =
+
+* Import settings from the earlier WP Activity Logger plugin once: access URL slug, owner account, extra password, notice preference, and timezone. Existing values in this plugin are never overwritten.
+* Honor the WP_ACTIVITY_LOGGER_ACCESS_PASSWORD constant as a read-only fallback when KOVALENKO_ADMIN_CHANGE_AUDIT_ACCESS_PASSWORD is not defined.
+* Show an owner-only notice when the earlier plugin is still active, because both would log every event twice.
+* Remove scheduled cleanup events and unlock sessions left behind by the earlier plugin.
+* Keep the existing owner account when the plugin is re-activated, but only while that account still exists and has access; otherwise ownership moves to the user who activates it (or the next administrator).
 
 = 2.8.0 =
 
@@ -99,6 +115,10 @@ Yes. The plugin defaults to `America/Edmonton`, but the owner can choose a diffe
 * Preserve Edmonton-based timestamps and filtering behavior.
 
 == Upgrade Notice ==
+
+= 2.8.1 =
+
+Imports settings from the earlier WP Activity Logger plugin. If you are switching, deactivate the old plugin first, since both write to the same log.
 
 = 2.6.3 =
 

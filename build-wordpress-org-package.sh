@@ -3,45 +3,51 @@
 set -eu
 
 ROOT_DIR="$(CDPATH= cd -- "$(dirname -- "$0")" && pwd)"
-PLUGINS_DIR="$(dirname -- "$ROOT_DIR")"
 BUILD_ROOT="$ROOT_DIR/wordpress-org-build"
 TRUNK_DIR="$BUILD_ROOT/trunk"
 ASSETS_DIR="$BUILD_ROOT/assets"
 PACKAGE_SLUG="kovalenko-admin-change-audit"
-# Installable plugin folder is built one level up, next to this plugin, so the local
-# WordPress (which mounts app/plugins) sees it as a standalone plugin for Plugin Check.
-PACKAGE_DIR="$PLUGINS_DIR/$PACKAGE_SLUG"
+# ROOT_DIR is the source plugin folder itself and is installable as-is, so it must never be
+# deleted or used as a build target. The package is staged under wordpress-org-build/package/<slug>/
+# and the zip's top-level folder is the slug.
+STAGE_ROOT="$BUILD_ROOT/package"
+STAGE_DIR="$STAGE_ROOT/$PACKAGE_SLUG"
 ZIP_PATH="$BUILD_ROOT/$PACKAGE_SLUG.zip"
+
+case "$STAGE_DIR" in
+    "$BUILD_ROOT"/package/?*) ;;
+    *)
+        printf '%s\n' "Refusing to build: unexpected staging path: $STAGE_DIR" >&2
+        exit 1
+        ;;
+esac
 
 rm -rf "$TRUNK_DIR"
 rm -rf "$ASSETS_DIR"
-rm -rf "$PACKAGE_DIR"
+rm -rf "$STAGE_ROOT"
 rm -f "$ZIP_PATH"
-mkdir -p "$TRUNK_DIR/assets" "$TRUNK_DIR/includes" "$TRUNK_DIR/languages" "$ASSETS_DIR"
-mkdir -p "$PACKAGE_DIR/assets" "$PACKAGE_DIR/includes" "$PACKAGE_DIR/languages"
+mkdir -p "$STAGE_DIR/assets" "$STAGE_DIR/includes" "$STAGE_DIR/languages" "$ASSETS_DIR"
 
-cp "$ROOT_DIR/activity-logger-site-owners.php" "$TRUNK_DIR/activity-logger-site-owners.php"
-cp "$ROOT_DIR/readme.txt" "$TRUNK_DIR/"
-cp "$ROOT_DIR/assets/admin.css" "$TRUNK_DIR/assets/"
-cp "$ROOT_DIR/assets/admin.js" "$TRUNK_DIR/assets/"
-cp "$ROOT_DIR/includes/"*.php "$TRUNK_DIR/includes/"
-cp "$ROOT_DIR/languages/index.php" "$TRUNK_DIR/languages/"
+cp "$ROOT_DIR/activity-logger-site-owners.php" "$STAGE_DIR/activity-logger-site-owners.php"
+cp "$ROOT_DIR/readme.txt" "$STAGE_DIR/"
+cp "$ROOT_DIR/assets/admin.css" "$STAGE_DIR/assets/"
+cp "$ROOT_DIR/assets/admin.js" "$STAGE_DIR/assets/"
+cp "$ROOT_DIR/includes/"*.php "$STAGE_DIR/includes/"
+cp "$ROOT_DIR/languages/index.php" "$STAGE_DIR/languages/"
+
+# WordPress.org SVN trunk uses the same plugin file set as the package.
+mkdir -p "$TRUNK_DIR"
+cp -R "$STAGE_DIR/." "$TRUNK_DIR/"
+
 cp "$ROOT_DIR/assets/icon-128x128.png" "$ASSETS_DIR/"
 cp "$ROOT_DIR/assets/icon-256x256.png" "$ASSETS_DIR/"
 cp "$ROOT_DIR/assets/banner-772x250.png" "$ASSETS_DIR/"
 
-cp "$ROOT_DIR/activity-logger-site-owners.php" "$PACKAGE_DIR/activity-logger-site-owners.php"
-cp "$ROOT_DIR/readme.txt" "$PACKAGE_DIR/"
-cp "$ROOT_DIR/assets/admin.css" "$PACKAGE_DIR/assets/"
-cp "$ROOT_DIR/assets/admin.js" "$PACKAGE_DIR/assets/"
-cp "$ROOT_DIR/includes/"*.php "$PACKAGE_DIR/includes/"
-cp "$ROOT_DIR/languages/index.php" "$PACKAGE_DIR/languages/"
-
 (
-    cd "$PLUGINS_DIR"
+    cd "$STAGE_ROOT"
     zip -rq "$ZIP_PATH" "$PACKAGE_SLUG"
 )
 
 printf '%s\n' "WordPress.org SVN trunk prepared at: $TRUNK_DIR"
-printf '%s\n' "Installable plugin folder prepared at: $PACKAGE_DIR"
+printf '%s\n' "Package staging folder prepared at: $STAGE_DIR"
 printf '%s\n' "Submission zip prepared at: $ZIP_PATH"

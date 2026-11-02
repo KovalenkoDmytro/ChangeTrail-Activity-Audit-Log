@@ -46,7 +46,7 @@ kovalenko-admin-change-audit/
 2. Activate the plugin in WordPress.
 3. On activation, the plugin:
    - creates the activity log table
-   - assigns the current admin user as the plugin owner
+   - assigns the current admin user as the plugin owner (an existing owner is kept only while that account still exists and has access)
    - creates the Activity Logs screen for the owner account
    - schedules the nightly maintenance task
 
@@ -111,13 +111,13 @@ The plugin currently logs:
 
 ## Development Notes
 
-- Main bootstrap: [activity-logger-site-owners.php](/Users/dmytrokovalenko/Documents/Projects/WordpressStarter/app/plugins/wp-logs/activity-logger-site-owners.php)
-- Plugin orchestration: [includes/class-wp-activity-logger-plugin.php](/Users/dmytrokovalenko/Documents/Projects/WordpressStarter/app/plugins/wp-logs/includes/class-wp-activity-logger-plugin.php)
-- Admin and access flow: [includes/class-wp-activity-logger-admin-service.php](/Users/dmytrokovalenko/Documents/Projects/WordpressStarter/app/plugins/wp-logs/includes/class-wp-activity-logger-admin-service.php)
-- Event logging: [includes/class-wp-activity-logger-event-logger.php](/Users/dmytrokovalenko/Documents/Projects/WordpressStarter/app/plugins/wp-logs/includes/class-wp-activity-logger-event-logger.php)
-- Admin UI: [includes/admin_show_page.php](/Users/dmytrokovalenko/Documents/Projects/WordpressStarter/app/plugins/wp-logs/includes/admin_show_page.php)
-- Database layer: [includes/data_base_queries.php](/Users/dmytrokovalenko/Documents/Projects/WordpressStarter/app/plugins/wp-logs/includes/data_base_queries.php)
-- WordPress.org readme: [readme.txt](/Users/dmytrokovalenko/Documents/Projects/WordpressStarter/app/plugins/wp-logs/readme.txt)
+- Main bootstrap: [activity-logger-site-owners.php](activity-logger-site-owners.php)
+- Plugin orchestration: [includes/class-wp-activity-logger-plugin.php](includes/class-wp-activity-logger-plugin.php)
+- Admin and access flow: [includes/class-wp-activity-logger-admin-service.php](includes/class-wp-activity-logger-admin-service.php)
+- Event logging: [includes/class-wp-activity-logger-event-logger.php](includes/class-wp-activity-logger-event-logger.php)
+- Admin UI: [includes/admin_show_page.php](includes/admin_show_page.php)
+- Database layer: [includes/data_base_queries.php](includes/data_base_queries.php)
+- WordPress.org readme: [readme.txt](readme.txt)
 
 ## Security Notes
 

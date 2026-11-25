@@ -1,4 +1,4 @@
-=== Kovalenko Admin Change Audit ===
+=== ChangeTrail – Activity & Audit Log ===
 Contributors: dmytrokovalenko
 Tags: activity log, audit log, security, logging, monitoring
 Requires at least: 6.2
@@ -8,11 +8,11 @@ Stable tag: 2.8.1
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-Records important WordPress activity and provides an owner-only log viewer for monitoring client changes.
+ChangeTrail records important WordPress activity in an owner-only log viewer so you can see who changed what and when.
 
 == Description ==
 
-Kovalenko Admin Change Audit helps site owners keep an audit trail of important administrative activity in a dedicated owner-only log viewer.
+ChangeTrail helps site owners keep an audit trail of important administrative activity in a dedicated owner-only log viewer.
 
 Features include:
 
@@ -30,8 +30,8 @@ The plugin does not require an external account or third-party service to functi
 == Installation ==
 
 1. Upload the plugin folder to `/wp-content/plugins/`, or install it through the WordPress Plugins screen.
-2. Activate **Kovalenko Admin Change Audit**.
-3. After activation, open **Tools > Activity Logs**.
+2. Activate **ChangeTrail – Activity & Audit Log**.
+3. After activation, open **Tools > ChangeTrail**.
 4. Optionally set an extra access password inside the log viewer.
 
 == Frequently Asked Questions ==
@@ -42,7 +42,7 @@ Only the owner account stored by the plugin can open the log viewer screen.
 
 = Is the viewer visible in the admin menu? =
 
-The screen is available to the owner account from the Tools menu and from an admin bar shortcut.
+The screen is available to the owner account under Tools > ChangeTrail and from a ChangeTrail shortcut in the admin bar.
 
 = Does the plugin send data to third-party services? =
 

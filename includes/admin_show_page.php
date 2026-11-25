@@ -44,7 +44,7 @@ function kovalenko_admin_change_audit_admin_page(): void
     $show_unlock = kovalenko_admin_change_audit()->is_password_required() && ! kovalenko_admin_change_audit()->is_screen_unlocked();
 
     echo '<div class="wrap wp-activity-logger-shell">';
-    echo '<h1>' . esc_html__('Activity Logs', 'kovalenko-admin-change-audit') . '</h1>';
+    echo '<h1>' . esc_html__('ChangeTrail – Activity & Audit Log', 'kovalenko-admin-change-audit') . '</h1>';
 
     // phpcs:ignore WordPress.Security.NonceVerification.Recommended -- Read-only admin notice flag from the current screen URL.
     $has_unlock_error = isset($_GET['kovalenko_admin_change_audit_access_error']) && sanitize_text_field(wp_unslash($_GET['kovalenko_admin_change_audit_access_error'])) === '1';
@@ -113,7 +113,7 @@ function kovalenko_admin_change_audit_render_dashboard(
     echo '<div>';
     echo '<p class="wp-activity-logger-eyebrow">' . esc_html__('Owner activity monitor', 'kovalenko-admin-change-audit') . '</p>';
     echo '<h2>' . esc_html__('A cleaner audit trail for client work', 'kovalenko-admin-change-audit') . '</h2>';
-    echo '<p>' . esc_html__('Track edits, plugin changes, and login activity from a dedicated Activity Logs screen.', 'kovalenko-admin-change-audit') . '</p>';
+    echo '<p>' . esc_html__('Track edits, plugin changes, and login activity in one place with ChangeTrail.', 'kovalenko-admin-change-audit') . '</p>';
     echo '</div>';
     echo '<div class="wp-activity-logger-actions">';
     echo '<a class="button button-secondary" href="' . esc_url($page_url) . '">' . esc_html__('Reset view', 'kovalenko-admin-change-audit') . '</a>';

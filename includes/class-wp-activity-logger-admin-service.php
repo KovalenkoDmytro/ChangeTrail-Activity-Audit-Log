@@ -116,8 +116,8 @@ final class Kovalenko_Admin_Change_Audit_Admin_Service
 
         add_submenu_page(
             'tools.php',
-            __('Activity Logs', 'kovalenko-admin-change-audit'),
-            __('Activity Logs', 'kovalenko-admin-change-audit'),
+            __('ChangeTrail – Activity & Audit Log', 'kovalenko-admin-change-audit'),
+            __('ChangeTrail', 'kovalenko-admin-change-audit'),
             Kovalenko_Admin_Change_Audit_Plugin::VIEW_CAPABILITY,
             $this->get_access_slug(),
             'kovalenko_admin_change_audit_admin_page'
@@ -183,7 +183,7 @@ final class Kovalenko_Admin_Change_Audit_Admin_Service
         $admin_bar->add_node(
             [
                 'id' => 'kovalenko-admin-change-audit',
-                'title' => __('Activity Logs', 'kovalenko-admin-change-audit'),
+                'title' => esc_html__('ChangeTrail', 'kovalenko-admin-change-audit'),
                 'href' => $this->get_admin_page_url(),
                 'meta' => [
                     'class' => 'kovalenko-admin-change-audit-admin-bar-link',
@@ -208,8 +208,8 @@ final class Kovalenko_Admin_Change_Audit_Admin_Service
         );
 
         echo '<div class="notice notice-success is-dismissible">';
-        echo '<p><strong>' . esc_html__('Kovalenko Admin Change Audit is ready to use.', 'kovalenko-admin-change-audit') . '</strong></p>';
-        echo '<p>' . esc_html__('Open Activity Logs from the Tools menu, or use this direct link:', 'kovalenko-admin-change-audit') . '</p>';
+        echo '<p><strong>' . esc_html__('ChangeTrail is ready to use.', 'kovalenko-admin-change-audit') . '</strong></p>';
+        echo '<p>' . esc_html__('Open Tools > ChangeTrail to see your activity log, or use this direct link:', 'kovalenko-admin-change-audit') . '</p>';
         echo '<p><a href="' . esc_url($this->get_admin_page_url()) . '">' . esc_html($this->get_admin_page_url()) . '</a></p>';
 
         if ($this->is_password_required()) {
@@ -303,7 +303,7 @@ final class Kovalenko_Admin_Change_Audit_Admin_Service
         $plugin_meta[] = sprintf(
             '<a href="%s">%s</a>',
             esc_url($this->get_admin_page_url()),
-            esc_html__('Logs', 'kovalenko-admin-change-audit')
+            esc_html__('View activity log', 'kovalenko-admin-change-audit')
         );
 
         return $plugin_meta;

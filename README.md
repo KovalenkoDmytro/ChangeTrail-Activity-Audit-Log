@@ -1,131 +1,35 @@
-# Kovalenko Admin Change Audit
+# ChangeTrail – Activity & Audit Log
 
-Kovalenko Admin Change Audit records important WordPress activity and provides a dedicated log viewer for the site owner. It is designed for situations where you need a clear audit trail of client actions.
+ChangeTrail is a free WordPress plugin that keeps a log of important changes on your site. It shows you who changed what and when, so you always know what happened on your site, even when several people work on it.
 
-## Features
+## Who it's for
 
-- Records user login and logout activity.
-- Records post creation, updates, trash actions, and permanent deletions.
-- Records plugin activation, deactivation, and deletion events.
-- Stores logs in a dedicated database table.
-- Provides an owner-only admin screen with:
-  - live refresh
-  - filtering by date, username, search text, and IP address
-  - sorting and pagination
-  - optional password protection
-  - configurable timezone with `America/Edmonton` as the default
-- Runs nightly maintenance to clean up expired log rows.
+- **Site owners** who want to know what changes are being made on their site.
+- **Agencies and freelancers** who manage client sites and need a clear history of client and team activity.
 
-## Requirements
+## What it does
 
-- WordPress 6.2+
-- PHP 8.1+
+- Records logins and logouts.
+- Records when posts and pages are created, edited, moved to the trash, or deleted, with a clear "before and after" view of what changed.
+- Records when plugins are activated, deactivated, or deleted.
+- Shows everything in one easy-to-read log under **Tools > ChangeTrail**, with filters, sorting, search, and live refresh.
+- Only the site owner can open the log, and you can add an extra password for more protection.
+- Lets you pick the timezone used for dates and times.
+- Cleans up old log entries automatically.
 
-## Plugin Structure
+## Privacy
 
-```text
-kovalenko-admin-change-audit/
-├── assets/
-│   ├── admin.css
-│   └── admin.js
-├── includes/
-│   ├── admin_show_page.php
-│   ├── class-wp-activity-logger-admin-service.php
-│   ├── class-wp-activity-logger-event-logger.php
-│   ├── class-wp-activity-logger-plugin.php
-│   └── data_base_queries.php
-├── languages/
-│   └── index.php
-├── readme.txt
-└── activity-logger-site-owners.php
-```
+ChangeTrail works fully inside your WordPress site. It doesn't need an account and doesn't send your data to any outside service.
+
+## Where to get it
+
+- **WordPress.org:** [wordpress.org/plugins/kovalenko-admin-change-audit](https://wordpress.org/plugins/kovalenko-admin-change-audit/). You can also install it right from your dashboard: go to **Plugins > Add New** and search for "ChangeTrail".
+- **GitHub:** [github.com/KovalenkoDmytro/changetrail-activity-log](https://github.com/KovalenkoDmytro/changetrail-activity-log)
 
 ## Installation
 
-1. Upload the plugin to `wp-content/plugins/kovalenko-admin-change-audit`.
-2. Activate the plugin in WordPress.
-3. On activation, the plugin:
-   - creates the activity log table
-   - assigns the current admin user as the plugin owner (an existing owner is kept only while that account still exists and has access)
-   - creates the Activity Logs screen for the owner account
-   - schedules the nightly maintenance task
-
-## Accessing the Log Viewer
-
-The owner can access the log viewer from the WordPress `Tools` menu.
-
-After activation, the plugin also shows the owner a direct link on the Plugins screen and on the dedicated log screen.
-
-The owner can also access the screen from the admin bar while logged in.
-
-For convenience, the owner will also see a small `Logs` link in the plugin row on the WordPress Plugins screen.
-
-Only the owner account can open the log viewer.
-
-## Password Protection
-
-Owner-only access is the first layer of protection. You can also enable a second layer by setting a password inside the log viewer screen.
-
-When a password is configured:
-
-- the owner must unlock the screen before viewing logs
-- the unlocked session remains valid for a limited time
-
-You can also define a password in code through `wp-config.php`:
-
-```php
-define('KOVALENKO_ADMIN_CHANGE_AUDIT_ACCESS_PASSWORD', 'your-strong-password');
-```
-
-If this constant is present, it takes precedence over the password saved in the UI.
-
-## Nightly Maintenance
-
-Every night at `02:00` in the WordPress site timezone, the plugin:
-
-1. Deletes log rows older than the configured retention period.
-2. Relies on WordPress cron to schedule the cleanup.
-
-If WP-Cron is disabled, a real server cron should trigger WordPress regularly.
-
-## Logged Events
-
-The plugin currently logs:
-
-- user login
-- user logout
-- post creation
-- post update
-- post moved to trash
-- permanent post deletion
-- plugin activation
-- plugin deactivation
-- plugin deletion
-
-## Time Zone
-
-- Log entries are stored in UTC for consistency.
-- The plugin uses `America/Edmonton` by default.
-- The owner can choose a different timezone in the viewer settings.
-- The selected timezone controls displayed timestamps, date filters, and the nightly maintenance schedule.
-
-## Development Notes
-
-- Main bootstrap: [activity-logger-site-owners.php](activity-logger-site-owners.php)
-- Plugin orchestration: [includes/class-wp-activity-logger-plugin.php](includes/class-wp-activity-logger-plugin.php)
-- Admin and access flow: [includes/class-wp-activity-logger-admin-service.php](includes/class-wp-activity-logger-admin-service.php)
-- Event logging: [includes/class-wp-activity-logger-event-logger.php](includes/class-wp-activity-logger-event-logger.php)
-- Admin UI: [includes/admin_show_page.php](includes/admin_show_page.php)
-- Database layer: [includes/data_base_queries.php](includes/data_base_queries.php)
-- WordPress.org readme: [readme.txt](readme.txt)
-
-## Security Notes
-
-- This plugin is meant for owner-only access.
-- Limit log viewer access to the intended owner account.
-- Use a strong password if password protection is enabled.
-- Do not store secrets in the plugin repository.
+Install and activate ChangeTrail from **Plugins > Add New**, then open **Tools > ChangeTrail** to see your activity log.
 
 ## License
 
-GPL2
+GPLv2 or later.

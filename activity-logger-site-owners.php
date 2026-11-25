@@ -1,8 +1,8 @@
 <?php
 /**
- * Plugin Name: Kovalenko Admin Change Audit
- * Plugin URI: https://github.com/KovalenkoDmytro/wp_logs_plugin
- * Description: Records key site activity and provides a protected activity log screen for site owners.
+ * Plugin Name: ChangeTrail – Activity & Audit Log
+ * Plugin URI: https://github.com/KovalenkoDmytro/changetrail-activity-log
+ * Description: ChangeTrail keeps an activity and audit log of important changes on your site (logins, content edits, plugin changes) in a protected, owner-only log viewer under Tools > ChangeTrail.
  * Version: 2.8.1
  * Author: Dmytro Kovalenko
  * Author URI: https://dmytro-kovalenko.ca
@@ -25,7 +25,7 @@ if (version_compare(PHP_VERSION, '8.1', '<')) {
         'admin_notices',
         static function (): void {
             echo '<div class="notice notice-error"><p>';
-            echo esc_html__('Kovalenko Admin Change Audit requires PHP 8.1 or newer.', 'kovalenko-admin-change-audit');
+            echo esc_html__('ChangeTrail requires PHP 8.1 or newer.', 'kovalenko-admin-change-audit');
             echo '</p></div>';
         }
     );

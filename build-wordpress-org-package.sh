@@ -30,8 +30,10 @@ mkdir -p "$STAGE_DIR/assets" "$STAGE_DIR/includes" "$STAGE_DIR/languages" "$ASSE
 
 cp "$ROOT_DIR/activity-logger-site-owners.php" "$STAGE_DIR/activity-logger-site-owners.php"
 cp "$ROOT_DIR/readme.txt" "$STAGE_DIR/"
+cp "$ROOT_DIR/uninstall.php" "$STAGE_DIR/"
 cp "$ROOT_DIR/assets/admin.css" "$STAGE_DIR/assets/"
 cp "$ROOT_DIR/assets/admin.js" "$STAGE_DIR/assets/"
+cp "$ROOT_DIR/assets/device.js" "$STAGE_DIR/assets/"
 cp "$ROOT_DIR/includes/"*.php "$STAGE_DIR/includes/"
 cp "$ROOT_DIR/languages/index.php" "$STAGE_DIR/languages/"
 

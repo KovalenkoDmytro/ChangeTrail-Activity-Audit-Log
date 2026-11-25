@@ -1,9 +1,9 @@
 <?php
 /**
  * Plugin Name: ChangeTrail – Activity & Audit Log
- * Plugin URI: https://github.com/KovalenkoDmytro/changetrail-activity-log
- * Description: ChangeTrail keeps an activity and audit log of important changes on your site (logins, content edits, plugin changes) in a protected, owner-only log viewer under Tools > ChangeTrail.
- * Version: 2.8.1
+ * Plugin URI: https://github.com/KovalenkoDmytro/ChangeTrail-Activity-Audit-Log
+ * Description: See who changed what and when: logins, failed logins, content, users, plugins, themes and key settings, in an owner-only log under Tools > ChangeTrail.
+ * Version: 3.0.0
  * Author: Dmytro Kovalenko
  * Author URI: https://dmytro-kovalenko.ca
  * License: GPL v2 or later
@@ -24,20 +24,23 @@ if (version_compare(PHP_VERSION, '8.1', '<')) {
     add_action(
         'admin_notices',
         static function (): void {
-            echo '<div class="notice notice-error"><p>';
-            echo esc_html__('ChangeTrail requires PHP 8.1 or newer.', 'kovalenko-admin-change-audit');
-            echo '</p></div>';
+            echo '<div class="notice notice-error"><p>' . esc_html__('ChangeTrail requires PHP 8.1 or newer.', 'kovalenko-admin-change-audit') . '</p></div>';
         }
     );
 
     return;
 }
 
-require_once __DIR__ . '/includes/data_base_queries.php';
-require_once __DIR__ . '/includes/class-wp-activity-logger-admin-service.php';
-require_once __DIR__ . '/includes/class-wp-activity-logger-event-logger.php';
-require_once __DIR__ . '/includes/class-wp-activity-logger-plugin.php';
-require_once __DIR__ . '/includes/admin_show_page.php';
+require_once __DIR__ . '/includes/class-kac-events.php';
+require_once __DIR__ . '/includes/class-kac-settings.php';
+require_once __DIR__ . '/includes/functions-db.php';
+require_once __DIR__ . '/includes/class-kac-access.php';
+require_once __DIR__ . '/includes/class-kac-devices.php';
+require_once __DIR__ . '/includes/class-kac-event-logger.php';
+require_once __DIR__ . '/includes/class-kac-privacy.php';
+require_once __DIR__ . '/includes/class-kac-admin.php';
+require_once __DIR__ . '/includes/admin-page.php';
+require_once __DIR__ . '/includes/class-kac-plugin.php';
 
 function kovalenko_admin_change_audit(): Kovalenko_Admin_Change_Audit_Plugin
 {

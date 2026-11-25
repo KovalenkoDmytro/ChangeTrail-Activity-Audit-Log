@@ -1,75 +1,121 @@
 === ChangeTrail – Activity & Audit Log ===
 Contributors: dmytrokovalenko
-Tags: activity log, audit log, security, logging, monitoring
+Tags: activity log, audit log, security, user activity, changelog
 Requires at least: 6.2
 Tested up to: 7.1
 Requires PHP: 8.1
-Stable tag: 2.8.1
+Stable tag: 3.0.0
 License: GPLv2 or later
 License URI: https://www.gnu.org/licenses/gpl-2.0.html
 
-ChangeTrail records important WordPress activity in an owner-only log viewer so you can see who changed what and when.
+See who changed what and when on your site: logins, content, users, plugins, themes and key settings, in a private log only you can open.
 
 == Description ==
 
-ChangeTrail helps site owners keep an audit trail of important administrative activity in a dedicated owner-only log viewer.
+ChangeTrail keeps a clear, private history of what happens in your WordPress admin. It is made for site owners and agencies who want to know who changed what and when, without a complicated security suite.
 
-Features include:
+The log lives under **Tools > ChangeTrail** and looks like the rest of WordPress: a normal list with search, filters, sorting and pagination.
 
-* Login and logout activity logging
-* Post creation, updates, trash actions, and permanent deletions
-* Plugin activation, deactivation, and deletion logging
-* Owner-only log viewer under the Tools menu
-* Live refresh, filters, sorting, and pagination
-* Optional second password layer before logs are shown
-* Configurable timezone with America/Edmonton as the default
-* Automatic cleanup of expired logs
+**What it records**
 
-The plugin does not require an external account or third-party service to function.
+* Logins, logouts and failed login attempts
+* New and deleted users, and role, email and password changes
+* Posts, pages and other content: created, edited (with a before/after view), trashed, restored and deleted
+* Custom field, featured image, category and tag changes
+* Plugins and themes installed, updated (with versions), activated, deactivated and deleted
+* WordPress core updates
+* Which device did it: every entry shows the computer and browser (for example "Reception PC · Chrome 131 · Windows 10/11"), so you can tell people apart even when they share one account and one office IP address
+* Key site settings: site title, site and WordPress address, admin email, membership, default role, language, timezone, permalinks, search engine visibility and homepage settings
+
+**Built for privacy and control**
+
+* Only one administrator (the owner) can open the log. Ownership can be handed over in the settings.
+* Optional extra password, with a lock after 5 wrong tries and an unlock that ends when you log out.
+* Choose how long entries are kept, from 7 days to forever. Old entries are removed automatically.
+* Turn activity types on or off, and ignore noisy post types and custom fields.
+* Values are shortened to 2 KB, and fields that look like passwords or keys are hidden.
+* Export to CSV, or delete the whole log.
+* Works with the WordPress personal data export and erase tools, and adds suggested text to the privacy policy guide.
+* No account, no external service, no third-party tracking. Everything stays in your own database.
 
 == Installation ==
 
-1. Upload the plugin folder to `/wp-content/plugins/`, or install it through the WordPress Plugins screen.
-2. Activate **ChangeTrail – Activity & Audit Log**.
-3. After activation, open **Tools > ChangeTrail**.
-4. Optionally set an extra access password inside the log viewer.
+1. Install ChangeTrail from **Plugins > Add New**, or upload the plugin folder to `/wp-content/plugins/`.
+2. Activate it. The administrator who activates it becomes the log owner.
+3. Open **Tools > ChangeTrail**. Use the **Settings** tab to choose what to log, how long to keep it and your timezone.
 
 == Frequently Asked Questions ==
 
-= Who can access the log viewer? =
+= Who can see the log? =
 
-Only the owner account stored by the plugin can open the log viewer screen.
+Only the owner: the administrator who activated the plugin, or whoever the owner handed it over to under Settings > Access. Other administrators do not see the menu item.
 
-= Is the viewer visible in the admin menu? =
+Keep in mind that any administrator can still deactivate or delete plugins. ChangeTrail logs it when it is deactivated, but it cannot stop another administrator who has full control of the site.
 
-The screen is available to the owner account under Tools > ChangeTrail and from a ChangeTrail shortcut in the admin bar.
+= Can I add an extra password? =
 
-= Does the plugin send data to third-party services? =
+Yes, under Settings > Access. You can also define `KOVALENKO_ADMIN_CHANGE_AUDIT_ACCESS_PASSWORD` in `wp-config.php`. After 5 wrong tries the screen locks for 15 minutes, and every wrong try is logged.
 
-No. The release prepared for WordPress.org works fully inside WordPress and does not fetch plugin updates or operational data from an external service.
+= I lost access to the log. How do I get it back? =
 
-= What happens on scheduled maintenance? =
+If the owner account is deleted or loses administrator rights, the next administrator who opens the dashboard becomes the owner. With WP-CLI you can reset it with `wp option delete kovalenko_admin_change_audit_owner_user_id`, or remove the extra password with `wp option delete kovalenko_admin_change_audit_access_password_hash`.
 
-The plugin runs a daily cleanup task that removes log rows older than the configured retention period.
+= Which timezone is used? =
 
-= Can I choose a different timezone? =
+By default the site timezone from Settings > General. You can choose a different one in ChangeTrail's settings. It is used for log times, date filters, exports and the nightly cleanup.
 
-Yes. The plugin defaults to `America/Edmonton`, but the owner can choose a different timezone for displayed timestamps, date filters, and the nightly maintenance schedule.
+= How does it tell devices apart when everyone shares one account? =
 
-= I used the earlier "WP Activity Logger" plugin. Do I keep my settings and logs? =
+Each browser that opens the login page or the dashboard gets a random device cookie (`kovalenko_admin_change_audit_device`, HttpOnly, kept for two years). Every log entry stores that device ID, a short one-way hash of the WordPress login session (never the session token itself) and the browser's user agent, shown as browser and operating system.
 
-Yes. Existing log rows are kept because both plugins use the same log table, and on the first load after updating this plugin imports the old access URL, owner, extra password, and timezone settings (only where this plugin has no value yet). The old plugin's options are left in place. The old password is only imported when the old owner is also the owner of this plugin. If the old plugin is still active during the first load, its access URL is not copied (both would use the same menu address); after deactivating the old plugin your log address is the new one shown in the access notice. Deactivate the old plugin to avoid recording every event twice. A password set through the old plugin's `wp_activity_logger_access_password` filter is not carried over; set it again in this plugin's security form or with KOVALENKO_ADMIN_CHANGE_AUDIT_ACCESS_PASSWORD.
+By default a small script in wp-admin also reads, once per login session, a few device details: screen size and pixel ratio, colour depth, device timezone, language, CPU cores, memory, graphics card (WebGL renderer), touch support and platform. These are stored with a hash in the device list, so a computer is recognized as "probably the same as" a known one even after its cookies are cleared. You can turn this off under Settings > What to log > Device fingerprint.
 
-= I lost access to the log viewer. How do I recover? =
+The first time a user is seen on a device, a "New device" entry is logged. Under the **Devices** tab you can name devices (for example "Reception PC") or forget them, and the log can be filtered by device.
 
-If the stored owner account was deleted or lost administrator access, the next administrator who opens the dashboard becomes the owner automatically. To reset it manually with WP-CLI, run `wp option delete kovalenko_admin_change_audit_owner_user_id`.
+= Is the device data personal data? =
+
+It can be, so ChangeTrail discloses it in the suggested privacy policy text, includes it in the personal data export, and removes it with the personal data eraser (log entries lose their device link, and devices used only by that person are deleted). Deleting the plugin removes the device list too, unless you chose to keep the data.
+
+= Does it slow down my site? =
+
+ChangeTrail writes one small database row per action and does nothing on normal front-end page views. Custom fields changed by anonymous visitors, such as view counters, are ignored.
+
+= Does it send data anywhere? =
+
+No. Everything stays in your WordPress database.
+
+= What happens when I delete the plugin? =
+
+By default the log table, the device list and the settings are removed. Turn on "Keep the log and settings" under Settings > Uninstall to keep them.
 
 == Screenshots ==
 
-1. Owner-only activity log viewer with filters, metrics, and live refresh.
-2. Security panel for protecting the hidden viewer with an extra password.
+1. The activity log with views, filters, search, device column and before/after details.
+2. The Devices tab: name or forget the computers that use the site.
+3. Settings: retention, timezone, what to log, owner and extra password.
 
 == Changelog ==
+
+= 3.0.0 =
+
+* New: redesigned log screen built from standard WordPress parts: list table with views, search, user/type/date filters, sortable columns, pagination, Screen Options and before/after details (long text uses the WordPress revisions diff).
+* New: Settings tab with retention period (7 days to forever), timezone, activity types, ignored post types and custom fields, owner transfer, extra password, unlock duration, optional toolbar link and uninstall behaviour.
+* New: logs failed logins, new and deleted users, and role, email and password changes.
+* New: logs plugin and theme installs and updates (with versions), theme switches and deletions, and WordPress core updates.
+* New: logs changes to key site settings.
+* New: device identification on every entry: a device cookie, a short hash of the login session, the browser and operating system, and an optional device fingerprint. Includes a Devices tab (rename, forget), a device filter, "New device" entries, "probably the same as" matching and device columns in the CSV export.
+* New: CSV export of the whole log or the current filter, and a "Delete all log entries" button.
+* New: personal data exporter and eraser, privacy policy text and an uninstall routine.
+* New: structured log entries (type, object and username are stored separately). Existing entries are converted in the background.
+* Security: the extra password locks after 5 wrong tries for 15 minutes, every wrong try is logged, and an unlock now lasts only for the current login session.
+* Security: values are cut to 2 KB and fields that look like passwords or keys are hidden. Changes made by anonymous visitors to custom fields are ignored.
+* Fix: deleting a plugin is now logged (the previous hook never fired).
+* Fix: permanently deleting an item from the trash is now logged.
+* Changed: the log address is now `tools.php?page=changetrail`. Old private addresses redirect to it.
+* Changed: when no timezone was chosen before, existing sites keep America/Edmonton. New sites use the site timezone.
+* Changed: the toolbar link is off by default.
+* Removed: header banner, statistics cards, auto-refresh and the AJAX endpoint.
+* Removed: the one-time import from the earlier "WP Activity Logger" plugin.
 
 = 2.8.1 =
 
@@ -116,9 +162,9 @@ If the stored owner account was deleted or lost administrator access, the next a
 
 == Upgrade Notice ==
 
-= 2.8.1 =
+= 3.0.0 =
 
-Imports settings from the earlier WP Activity Logger plugin. If you are switching, deactivate the old plugin first, since both write to the same log.
+New native WordPress log screen and settings, more activity types, CSV export, retention setting and stronger access protection. The log address changes to Tools > ChangeTrail (old links redirect). If you use an extra password, you will be asked for it once after updating.
 
 = 2.6.3 =
 

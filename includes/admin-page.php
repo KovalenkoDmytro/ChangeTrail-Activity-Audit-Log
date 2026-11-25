@@ -11,6 +11,40 @@ if (! defined('ABSPATH')) {
  * form-table, notices, card) so it blends in with the rest of wp-admin.
  */
 
+/**
+ * Stable hue (0–359) for a user, device or session key, so the same one always gets the same colour.
+ */
+function kovalenko_admin_change_audit_hue(string $key): int
+{
+    return (int) (hexdec(substr(md5($key), 0, 6)) % 360);
+}
+
+/**
+ * Inline style that sets the --kac-hue custom property; the pastel colours themselves live in admin.css.
+ */
+function kovalenko_admin_change_audit_hue_style(string $key): string
+{
+    return '--kac-hue:' . kovalenko_admin_change_audit_hue($key);
+}
+
+/**
+ * A subtle coloured pill around already-escaped HTML.
+ */
+function kovalenko_admin_change_audit_pill(string $inner_html, string $key, string $class = ''): string
+{
+    return '<span class="kac-pill' . ($class !== '' ? ' ' . esc_attr($class) : '') . '" style="' . esc_attr(kovalenko_admin_change_audit_hue_style($key)) . '">' . $inner_html . '</span>';
+}
+
+function kovalenko_admin_change_audit_user_key(int $user_id): string
+{
+    return 'user:' . $user_id;
+}
+
+function kovalenko_admin_change_audit_device_key(string $device_id): string
+{
+    return 'device:' . $device_id;
+}
+
 function kovalenko_admin_change_audit_render_page(Kovalenko_Admin_Change_Audit_Admin $admin): void
 {
     if (! Kovalenko_Admin_Change_Audit_Access::is_owner()) {
@@ -196,7 +230,8 @@ function kovalenko_admin_change_audit_render_settings(Kovalenko_Admin_Change_Aud
     echo '</td></tr>';
 
     echo '<tr><th scope="row">' . esc_html__('Toolbar', 'kovalenko-admin-change-audit') . '</th><td>';
-    echo '<label for="kac-admin-bar"><input type="checkbox" id="kac-admin-bar" name="admin_bar" value="1"' . checked($settings['admin_bar'], true, false) . '> ' . esc_html__('Show a ChangeTrail link in the toolbar', 'kovalenko-admin-change-audit') . '</label>';
+    echo '<label for="kac-admin-bar"><input type="checkbox" id="kac-admin-bar" name="admin_bar" value="1"' . checked($settings['admin_bar'], true, false) . '> ' . esc_html__('Show an "Activity logs" link in the toolbar', 'kovalenko-admin-change-audit') . '</label>';
+    echo '<p class="description">' . esc_html__('Only you, the log owner, see this link, in the dashboard and on the site.', 'kovalenko-admin-change-audit') . '</p>';
     echo '</td></tr>';
     echo '</tbody></table>';
 
@@ -429,7 +464,8 @@ function kovalenko_admin_change_audit_render_devices(Kovalenko_Admin_Change_Audi
         $field_id = 'kac-device-' . $device_id;
 
         echo '<tr><td class="column-primary" data-colname="' . esc_attr__('Device', 'kovalenko-admin-change-audit') . '">';
-        echo '<label for="' . esc_attr($field_id) . '"><strong>' . esc_html($code) . '</strong></label>';
+        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- The pill is built from escaped parts.
+        echo '<label for="' . esc_attr($field_id) . '">' . kovalenko_admin_change_audit_pill('<strong>' . esc_html((string) $device->label !== '' ? $device->label . ' ' . $code : $code) . '</strong>', kovalenko_admin_change_audit_device_key($device_id)) . '</label>';
         if ($device_id === $current) {
             echo ' <span class="kac-badge">' . esc_html__('This browser', 'kovalenko-admin-change-audit') . '</span>';
         }
@@ -470,9 +506,10 @@ function kovalenko_admin_change_audit_render_devices(Kovalenko_Admin_Change_Audi
         $names = [];
         foreach (Kovalenko_Admin_Change_Audit_Devices::user_ids($device) as $user_id) {
             $user = get_userdata($user_id);
-            $names[] = $user instanceof WP_User ? $user->user_login : '#' . $user_id;
+            $names[] = kovalenko_admin_change_audit_pill(esc_html($user instanceof WP_User ? $user->user_login : '#' . $user_id), kovalenko_admin_change_audit_user_key($user_id));
         }
-        echo '<td data-colname="' . esc_attr__('Users', 'kovalenko-admin-change-audit') . '">' . esc_html(implode(', ', $names)) . '</td>';
+        // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- Each pill is built from escaped parts.
+        echo '<td data-colname="' . esc_attr__('Users', 'kovalenko-admin-change-audit') . '">' . implode(' ', $names) . '</td>';
 
         echo '<td data-colname="' . esc_attr__('Last seen', 'kovalenko-admin-change-audit') . '">' . esc_html(kovalenko_admin_change_audit_format_timestamp((string) $device->last_seen));
         echo '<br><span class="description">' . esc_html(sprintf(

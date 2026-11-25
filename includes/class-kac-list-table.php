@@ -142,7 +142,8 @@ final class Kovalenko_Admin_Change_Audit_List_Table extends WP_List_Table
         echo '<select name="user" id="kac-filter-user">';
         echo '<option value="">' . esc_html__('All users', 'kovalenko-admin-change-audit') . '</option>';
         foreach (kovalenko_admin_change_audit_logged_users() as $user_id => $label) {
-            echo '<option value="' . esc_attr((string) $user_id) . '"' . selected($this->filters['user_id'], $user_id, false) . '>' . esc_html($label) . '</option>';
+            $style = $user_id > 0 ? ' class="kac-option" style="' . esc_attr(kovalenko_admin_change_audit_hue_style(kovalenko_admin_change_audit_user_key((int) $user_id))) . '"' : '';
+            echo '<option value="' . esc_attr((string) $user_id) . '"' . $style . selected($this->filters['user_id'], $user_id, false) . '>' . esc_html($label) . '</option>'; // phpcs:ignore WordPress.Security.EscapeOutput.OutputNotEscaped -- $style is escaped above.
         }
         echo '</select>';
 
@@ -157,7 +158,7 @@ final class Kovalenko_Admin_Change_Audit_List_Table extends WP_List_Table
                 $listed = $listed || $device_id === $this->filters['device'];
                 $agent = Kovalenko_Admin_Change_Audit_Devices::parse_user_agent((string) $device->last_user_agent);
                 $text = Kovalenko_Admin_Change_Audit_Devices::label($device) . ($agent['browser'] !== '' ? ' – ' . implode(', ', array_filter([$agent['browser'], $agent['os']])) : '');
-                echo '<option value="' . esc_attr($device_id) . '"' . selected($this->filters['device'], $device_id, false) . '>' . esc_html($text) . '</option>';
+                echo '<option value="' . esc_attr($device_id) . '" class="kac-option" style="' . esc_attr(kovalenko_admin_change_audit_hue_style(kovalenko_admin_change_audit_device_key($device_id))) . '"' . selected($this->filters['device'], $device_id, false) . '>' . esc_html($text) . '</option>';
             }
             if (! $listed && $this->filters['device'] !== '') {
                 echo '<option value="' . esc_attr($this->filters['device']) . '" selected>' . esc_html(Kovalenko_Admin_Change_Audit_Devices::code($this->filters['device'])) . '</option>';
@@ -295,14 +296,14 @@ final class Kovalenko_Admin_Change_Audit_List_Table extends WP_List_Table
             $login = (string) $item->user_login !== '' ? (string) $item->user_login : sprintf('#%d', $user_id);
 
             return '<span class="kac-user">' . get_avatar(0, 32, 'mystery', '', ['force_default' => true])
-                . '<a href="' . esc_url($filter_url) . '">' . esc_html($login) . '</a><br><span class="description">' . esc_html__('Deleted user', 'kovalenko-admin-change-audit') . '</span></span>';
+                . kovalenko_admin_change_audit_pill('<a href="' . esc_url($filter_url) . '">' . esc_html($login) . '</a>', kovalenko_admin_change_audit_user_key($user_id)) . '<br><span class="description">' . esc_html__('Deleted user', 'kovalenko-admin-change-audit') . '</span></span>';
         }
 
         $roles = wp_roles()->get_names();
         $role = $user->roles !== [] && isset($roles[reset($user->roles)]) ? translate_user_role($roles[reset($user->roles)]) : '';
 
         return '<span class="kac-user">' . get_avatar($user, 32)
-            . '<a href="' . esc_url($filter_url) . '">' . esc_html($user->display_name) . '</a>'
+            . kovalenko_admin_change_audit_pill('<a href="' . esc_url($filter_url) . '">' . esc_html($user->display_name) . '</a>', kovalenko_admin_change_audit_user_key($user_id))
             . ($role !== '' ? '<br><span class="description">' . esc_html($role) . '</span>' : '')
             . '</span>';
     }
@@ -325,7 +326,7 @@ final class Kovalenko_Admin_Change_Audit_List_Table extends WP_List_Table
         if ($device_id !== '') {
             $name = $device !== null && (string) $device->label !== '' ? (string) $device->label : Kovalenko_Admin_Change_Audit_Devices::code($device_id);
             $url = add_query_arg('device', $device_id, kovalenko_admin_change_audit()->admin()->page_url());
-            $output .= '<a href="' . esc_url($url) . '" class="kac-device-name">' . esc_html($name) . '</a>';
+            $output .= kovalenko_admin_change_audit_pill('<a href="' . esc_url($url) . '" class="kac-device-name">' . esc_html($name) . '</a>', kovalenko_admin_change_audit_device_key($device_id));
             if ($device !== null && (string) $device->label !== '') {
                 $output .= ' <code>' . esc_html(Kovalenko_Admin_Change_Audit_Devices::code($device_id)) . '</code>';
             }
@@ -361,16 +362,16 @@ final class Kovalenko_Admin_Change_Audit_List_Table extends WP_List_Table
 
         $rows = [];
         if ((string) ($item->session_hash ?? '') !== '') {
-            $rows[__('Session', 'kovalenko-admin-change-audit')] = (string) $item->session_hash;
+            $rows[__('Session', 'kovalenko-admin-change-audit')] = kovalenko_admin_change_audit_pill(esc_html((string) $item->session_hash), 'session:' . (string) $item->session_hash, 'kac-pill-code');
         }
         if ($device_id !== '') {
-            $rows[__('Device ID', 'kovalenko-admin-change-audit')] = $device_id;
+            $rows[__('Device ID', 'kovalenko-admin-change-audit')] = kovalenko_admin_change_audit_pill(esc_html($device_id), kovalenko_admin_change_audit_device_key($device_id), 'kac-pill-code');
         }
         if ($device !== null && (string) $device->fingerprint !== '') {
-            $rows[__('Fingerprint', 'kovalenko-admin-change-audit')] = substr((string) $device->fingerprint, 0, 12) . ' (' . Kovalenko_Admin_Change_Audit_Devices::fingerprint_summary($device) . ')';
+            $rows[__('Fingerprint', 'kovalenko-admin-change-audit')] = esc_html(substr((string) $device->fingerprint, 0, 12) . ' (' . Kovalenko_Admin_Change_Audit_Devices::fingerprint_summary($device) . ')');
         }
         if ($agent !== '') {
-            $rows[__('User agent', 'kovalenko-admin-change-audit')] = $agent;
+            $rows[__('User agent', 'kovalenko-admin-change-audit')] = esc_html($agent);
         }
 
         if ($rows === []) {
@@ -379,7 +380,8 @@ final class Kovalenko_Admin_Change_Audit_List_Table extends WP_List_Table
 
         $output = '<details class="kac-details kac-device-details"><summary>' . esc_html__('Device and session', 'kovalenko-admin-change-audit') . '</summary><table class="widefat striped kac-changes"><tbody>';
         foreach ($rows as $label => $value) {
-            $output .= '<tr><th scope="row">' . esc_html($label) . '</th><td>' . esc_html($value) . '</td></tr>';
+            // Values are escaped (or built from escaped parts) above.
+            $output .= '<tr><th scope="row">' . esc_html($label) . '</th><td>' . $value . '</td></tr>';
         }
 
         return $output . '</tbody></table></details>';

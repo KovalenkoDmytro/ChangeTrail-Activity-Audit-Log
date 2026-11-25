@@ -12,7 +12,7 @@ if (! defined('ABSPATH')) {
 final class Kovalenko_Admin_Change_Audit_Plugin
 {
     public const VERSION = '3.0.0';
-    public const SCHEMA_VERSION = '3.0.0.1';
+    public const SCHEMA_VERSION = '3.0.0.2';
     public const OPTION_SCHEMA_VERSION = 'kovalenko_admin_change_audit_schema_version';
     public const CRON_MAINTENANCE = 'kovalenko_admin_change_audit_nightly_maintenance';
     public const CRON_BACKFILL = 'kovalenko_admin_change_audit_backfill';
@@ -68,7 +68,6 @@ final class Kovalenko_Admin_Change_Audit_Plugin
             Kovalenko_Admin_Change_Audit_Access::set_owner(get_current_user_id());
         }
 
-        update_option(Kovalenko_Admin_Change_Audit_Admin::OPTION_SHOW_NOTICE, 'yes', false);
         $this->schedule_maintenance();
     }
 
@@ -101,6 +100,16 @@ final class Kovalenko_Admin_Change_Audit_Plugin
             delete_option('kovalenko_admin_change_audit_legacy_migrated');
             wp_clear_scheduled_hook('kovalenko_admin_change_audit_nightly_update');
         }
+
+        if ($previous !== '' && version_compare($previous, '3.0.0.2', '<')) {
+            // The owner-only "Activity logs" toolbar link is now on by default; turn it on for existing sites once.
+            $settings = Kovalenko_Admin_Change_Audit_Settings::all();
+            $settings['admin_bar'] = true;
+            Kovalenko_Admin_Change_Audit_Settings::save($settings);
+        }
+
+        // The one-time activation notice was removed; drop its leftover flag.
+        delete_option('kovalenko_admin_change_audit_show_access_notice');
 
         update_option(self::OPTION_SCHEMA_VERSION, self::SCHEMA_VERSION, false);
 

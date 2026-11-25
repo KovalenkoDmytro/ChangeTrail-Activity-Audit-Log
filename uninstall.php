@@ -30,7 +30,6 @@ function kovalenko_admin_change_audit_uninstall_site(): void
             'kovalenko_admin_change_audit_owner_user_id',
             'kovalenko_admin_change_audit_access_password_hash',
             'kovalenko_admin_change_audit_access_slug',
-            'kovalenko_admin_change_audit_show_access_notice',
             'kovalenko_admin_change_audit_schema_version',
             'kovalenko_admin_change_audit_legacy_migrated',
         ] as $option

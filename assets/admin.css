@@ -1,4 +1,43 @@
 /* ChangeTrail: only what core styles do not cover. */
+
+/* Stable per-user / per-device pastel colours. --kac-hue is set inline; light background + dark text of the
+   same hue keeps contrast above WCAG AA (at least 6.7:1 for every hue). */
+.kac-wrap .kac-pill {
+    display: inline-block;
+    max-width: 100%;
+    padding: 0 7px;
+    border: 1px solid hsl(var(--kac-hue, 210) 30% 84%);
+    border-radius: 10px;
+    background: hsl(var(--kac-hue, 210) 45% 94%);
+    color: hsl(var(--kac-hue, 210) 45% 24%);
+    line-height: 1.7;
+    overflow-wrap: anywhere;
+}
+
+.kac-wrap .kac-pill a {
+    color: inherit;
+    text-decoration: none;
+}
+
+.kac-wrap .kac-pill a:hover,
+.kac-wrap .kac-pill a:focus {
+    color: inherit;
+    text-decoration: underline;
+}
+
+.kac-wrap .kac-pill-code {
+    font-family: Consolas, Monaco, monospace;
+    font-size: 12px;
+}
+
+.kac-wrap .kac-devices td .kac-pill {
+    margin: 0 2px 2px 0;
+}
+
+.kac-wrap option.kac-option {
+    background: hsl(var(--kac-hue, 210) 45% 94%);
+    color: hsl(var(--kac-hue, 210) 45% 24%);
+}
 .kac-wrap .column-event .dashicons {
     color: #646970;
     margin-right: 2px;

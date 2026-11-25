@@ -13,7 +13,6 @@ final class Kovalenko_Admin_Change_Audit_Admin
 {
     public const PAGE_SLUG = 'changetrail';
     public const OPTION_LEGACY_SLUG = 'kovalenko_admin_change_audit_access_slug';
-    public const OPTION_SHOW_NOTICE = 'kovalenko_admin_change_audit_show_access_notice';
     public const PER_PAGE_OPTION = 'kovalenko_admin_change_audit_per_page';
 
     private const ACTION_UNLOCK = 'kovalenko_admin_change_audit_unlock';
@@ -180,6 +179,9 @@ final class Kovalenko_Admin_Change_Audit_Admin
         );
     }
 
+    /**
+     * Owner-only "Activity logs" toolbar link, in wp-admin and on the front end.
+     */
     public function admin_bar_link(WP_Admin_Bar $admin_bar): void
     {
         if (! is_admin_bar_showing() || ! Kovalenko_Admin_Change_Audit_Settings::get('admin_bar') || ! Kovalenko_Admin_Change_Audit_Access::is_owner()) {
@@ -188,8 +190,9 @@ final class Kovalenko_Admin_Change_Audit_Admin
 
         $admin_bar->add_node([
             'id' => 'kovalenko-admin-change-audit',
-            'title' => '<span class="ab-icon dashicons dashicons-backup" aria-hidden="true"></span><span class="ab-label">' . esc_html__('ChangeTrail', 'kovalenko-admin-change-audit') . '</span>',
+            'title' => '<span class="ab-icon dashicons dashicons-list-view" aria-hidden="true"></span><span class="ab-label">' . esc_html__('Activity logs', 'kovalenko-admin-change-audit') . '</span>',
             'href' => $this->page_url(),
+            'meta' => ['title' => __('Activity logs', 'kovalenko-admin-change-audit')],
         ]);
     }
 
@@ -205,15 +208,12 @@ final class Kovalenko_Admin_Change_Audit_Admin
         }
 
         return array_merge([
-            'log' => '<a href="' . esc_url($this->page_url()) . '">' . esc_html__('View log', 'kovalenko-admin-change-audit') . '</a>',
             'settings' => '<a href="' . esc_url($this->page_url('settings')) . '">' . esc_html__('Settings', 'kovalenko-admin-change-audit') . '</a>',
         ], $links);
     }
 
     public function render_global_notices(): void
     {
-        $screen = function_exists('get_current_screen') ? get_current_screen() : null;
-
         $transferred = get_transient('kovalenko_admin_change_audit_transferred_' . get_current_user_id());
         if (is_string($transferred) && $transferred !== '') {
             delete_transient('kovalenko_admin_change_audit_transferred_' . get_current_user_id());
@@ -223,26 +223,6 @@ final class Kovalenko_Admin_Change_Audit_Admin
                 $transferred
             )) . '</p></div>';
         }
-
-        if (
-            ! $screen instanceof WP_Screen
-            || $screen->base !== 'plugins'
-            || get_option(self::OPTION_SHOW_NOTICE, 'no') !== 'yes'
-            || ! Kovalenko_Admin_Change_Audit_Access::is_owner()
-        ) {
-            return;
-        }
-
-        // Shown once, right after activation.
-        update_option(self::OPTION_SHOW_NOTICE, 'no', false);
-
-        echo '<div class="notice notice-success is-dismissible"><p>';
-        printf(
-            /* translators: %s: link to the activity log screen */
-            esc_html__('ChangeTrail is now recording activity. Only you can see the log: %s', 'kovalenko-admin-change-audit'),
-            '<a href="' . esc_url($this->page_url()) . '">' . esc_html__('Tools → ChangeTrail', 'kovalenko-admin-change-audit') . '</a>'
-        );
-        echo '</p></div>';
     }
 
     /* ---------------------------------------------------------------------

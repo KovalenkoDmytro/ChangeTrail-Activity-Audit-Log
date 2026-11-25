@@ -46,7 +46,7 @@ final class Kovalenko_Admin_Change_Audit_Settings
     {
         return [
             'retention_days' => 30,
-            'admin_bar' => false,
+            'admin_bar' => true,
             'groups' => array_keys(Kovalenko_Admin_Change_Audit_Events::groups()),
             'excluded_post_types' => self::DEFAULT_EXCLUDED_POST_TYPES,
             'excluded_meta_keys' => self::DEFAULT_EXCLUDED_META_KEYS,
@@ -109,7 +109,7 @@ final class Kovalenko_Admin_Change_Audit_Settings
 
         return [
             'retention_days' => $retention,
-            'admin_bar' => (bool) ($input['admin_bar'] ?? false),
+            'admin_bar' => (bool) ($input['admin_bar'] ?? true),
             'groups' => $groups,
             'excluded_post_types' => $post_types,
             'excluded_meta_keys' => $meta_keys,

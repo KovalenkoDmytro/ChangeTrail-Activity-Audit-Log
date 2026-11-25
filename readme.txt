@@ -99,11 +99,12 @@ By default the log table, the device list and the settings are removed. Turn on 
 = 3.0.0 =
 
 * New: redesigned log screen built from standard WordPress parts: list table with views, search, user/type/date filters, sortable columns, pagination, Screen Options and before/after details (long text uses the WordPress revisions diff).
-* New: Settings tab with retention period (7 days to forever), timezone, activity types, ignored post types and custom fields, owner transfer, extra password, unlock duration, optional toolbar link and uninstall behaviour.
+* New: Settings tab with retention period (7 days to forever), timezone, activity types, ignored post types and custom fields, owner transfer, extra password, unlock duration, owner-only toolbar link and uninstall behaviour.
 * New: logs failed logins, new and deleted users, and role, email and password changes.
 * New: logs plugin and theme installs and updates (with versions), theme switches and deletions, and WordPress core updates.
 * New: logs changes to key site settings.
 * New: device identification on every entry: a device cookie, a short hash of the login session, the browser and operating system, and an optional device fingerprint. Includes a Devices tab (rename, forget), a device filter, "New device" entries, "probably the same as" matching and device columns in the CSV export.
+* New: each user and device gets its own soft colour in the log and the Devices tab, so the same person or computer is easy to spot.
 * New: CSV export of the whole log or the current filter, and a "Delete all log entries" button.
 * New: personal data exporter and eraser, privacy policy text and an uninstall routine.
 * New: structured log entries (type, object and username are stored separately). Existing entries are converted in the background.
@@ -113,7 +114,7 @@ By default the log table, the device list and the settings are removed. Turn on 
 * Fix: permanently deleting an item from the trash is now logged.
 * Changed: the log address is now `tools.php?page=changetrail`. Old private addresses redirect to it.
 * Changed: when no timezone was chosen before, existing sites keep America/Edmonton. New sites use the site timezone.
-* Changed: the toolbar link is off by default.
+* Changed: an "Activity logs" toolbar link is shown only to the log owner (on by default, can be turned off in Settings). The activation notice was removed, so nothing points other users to the log.
 * Removed: header banner, statistics cards, auto-refresh and the AJAX endpoint.
 * Removed: the one-time import from the earlier "WP Activity Logger" plugin.
 
